@@ -1,0 +1,117 @@
+2026-02-25 10:29:48,903 - __main__ - INFO - ==================================================
+2026-02-25 10:29:48,903 - __main__ - INFO - 初始化竞品监控系统
+2026-02-25 10:29:48,904 - __main__ - INFO - ==================================================
+2026-02-25 10:29:48,904 - __main__ - ERROR - Playwright 未安装，请运行: pip install -r requirements.txt
+2026-02-25 11:03:35,120 - __main__ - INFO - ==================================================
+2026-02-25 11:03:35,120 - __main__ - INFO - 初始化竞品监控系统
+2026-02-25 11:03:35,120 - __main__ - INFO - ==================================================
+2026-02-25 11:03:35,120 - __main__ - INFO - Playwright 已安装
+2026-02-25 11:03:35,121 - __main__ - INFO - 配置存在: ./config/sites.yaml
+2026-02-25 11:03:35,121 - __main__ - INFO - 配置存在: ./config/scheduler.yaml
+2026-02-25 11:03:35,121 - __main__ - INFO - 配置存在: ./config/settings.yaml
+2026-02-25 11:03:35,121 - __main__ - INFO - 目录就绪: ./data/snapshots
+2026-02-25 11:03:35,121 - __main__ - INFO - 目录就绪: ./data/parsed
+2026-02-25 11:03:35,121 - __main__ - INFO - 目录就绪: ./data/history
+2026-02-25 11:03:35,121 - __main__ - INFO - 目录就绪: ./reports
+2026-02-25 11:03:35,121 - __main__ - INFO - 目录就绪: ./logs
+2026-02-25 11:03:35,121 - __main__ - INFO - ==================================================
+2026-02-25 11:03:35,122 - __main__ - INFO - 初始化完成
+2026-02-25 11:03:35,122 - __main__ - INFO - ==================================================
+2026-02-25 11:03:35,122 - __main__ - INFO - 下一步:
+2026-02-25 11:03:35,122 - __main__ - INFO -   1. 配置邮件: 编辑 config/settings.yaml
+2026-02-25 11:03:35,122 - __main__ - INFO -   2. 发现URL: 运行 python main.py --discover
+2026-02-25 11:03:35,122 - __main__ - INFO -   3. 建立基线: 运行 python main.py
+2026-02-25 11:03:35,122 - __main__ - INFO -   4. 启动定时: 运行 python main.py --schedule
+2026-02-25 11:03:51,240 - src.scheduler.daily_job - INFO - ==================================================
+2026-02-25 11:03:51,240 - src.scheduler.daily_job - INFO - 开始执行竞品监控任务: 2026-02-25
+2026-02-25 11:03:51,241 - src.scheduler.daily_job - INFO - ==================================================
+2026-02-25 11:03:51,242 - src.scheduler.daily_job - WARNING - 未找到昨日快照 (2026-02-24)，将建立基线
+2026-02-25 11:03:51,243 - src.scheduler.daily_job - INFO - Step 2: 抓取今日页面...
+2026-02-25 11:03:51,243 - src.collector.crawler - INFO - 开始爬取站点: LootBar
+2026-02-25 11:03:51,243 - src.collector.browser - INFO - 启动浏览器...
+2026-02-25 11:34:27,680 - src.scheduler.daily_job - INFO - ==================================================
+2026-02-25 11:34:27,681 - src.scheduler.daily_job - INFO - 开始执行竞品监控任务: 2026-02-25
+2026-02-25 11:34:27,681 - src.scheduler.daily_job - INFO - ==================================================
+2026-02-25 11:34:27,682 - src.scheduler.daily_job - WARNING - 未找到昨日快照 (2026-02-24)，将建立基线
+2026-02-25 11:34:27,682 - src.scheduler.daily_job - INFO - Step 2: 抓取今日页面...
+2026-02-25 11:34:27,682 - src.collector.crawler - INFO - 开始爬取站点: LootBar
+2026-02-25 11:34:27,682 - src.collector.browser - INFO - 启动浏览器...
+2026-02-25 11:34:29,406 - src.collector.browser - INFO - 浏览器启动完成
+2026-02-25 11:34:29,406 - src.collector.crawler - INFO - 抓取页面: https://www.lootbar.gg
+2026-02-25 11:35:01,033 - src.collector.browser - ERROR - 访问页面失败: https://www.lootbar.gg, 错误: Page.goto: Timeout 30000ms exceeded.
+Call log:
+  - navigating to "https://www.lootbar.gg/", waiting until "networkidle"
+
+2026-02-25 11:35:01,042 - src.collector.browser - INFO - 关闭浏览器...
+2026-02-25 11:35:01,224 - src.collector.browser - INFO - 浏览器已关闭
+2026-02-25 11:35:01,224 - src.collector.crawler - INFO - 站点爬取完成: LootBar, 成功: 0, 失败: 1
+2026-02-25 11:35:01,224 - src.collector.crawler - INFO - 开始爬取站点: LDShop
+2026-02-25 11:35:01,224 - src.collector.browser - INFO - 启动浏览器...
+2026-02-25 11:35:01,601 - src.collector.browser - INFO - 浏览器启动完成
+2026-02-25 11:35:01,601 - src.collector.crawler - INFO - 抓取页面: https://www.ldshop.gg
+2026-02-25 11:35:23,455 - src.collector.browser - INFO - 关闭浏览器...
+2026-02-25 11:35:23,641 - src.collector.browser - INFO - 浏览器已关闭
+2026-02-25 11:35:23,642 - src.collector.crawler - INFO - 站点爬取完成: LDShop, 成功: 1, 失败: 0
+2026-02-25 11:35:23,642 - src.scheduler.daily_job - INFO - Step 3: 提取结构化数据...
+2026-02-25 11:35:23,799 - src.scheduler.daily_job - INFO - Step 4: 差异对比...
+2026-02-25 11:35:23,799 - src.scheduler.daily_job - INFO - 首次运行，跳过差异对比，建立基线
+2026-02-25 11:35:23,799 - src.scheduler.daily_job - INFO - Step 5: 变化归类...
+2026-02-25 11:35:23,799 - src.scheduler.daily_job - INFO - Step 6: 生成报告...
+2026-02-25 11:35:23,800 - src.reporter.report_builder - INFO - 报告已保存: ./reports\competitor_report_2026-02-25.md
+2026-02-25 11:35:23,800 - src.scheduler.daily_job - INFO - 报告已保存: ./reports\competitor_report_2026-02-25.md
+2026-02-25 11:35:23,800 - src.scheduler.daily_job - INFO - Step 7: 发送邮件...
+2026-02-25 11:35:23,800 - src.reporter.mail_sender - ERROR - 邮件配置不完整，无法发送
+2026-02-25 11:35:23,800 - src.scheduler.daily_job - WARNING - 邮件发送失败或未配置
+2026-02-25 11:35:23,800 - src.scheduler.daily_job - INFO - ==================================================
+2026-02-25 11:35:23,800 - src.scheduler.daily_job - INFO - 任务完成: 2026-02-25
+2026-02-25 11:35:23,800 - src.scheduler.daily_job - INFO - ==================================================
+2026-02-25 11:44:02,242 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-02-25 11:44:02,243 - apscheduler.scheduler - INFO - Added job "run_job" to job store "default"
+2026-02-25 11:44:02,243 - apscheduler.scheduler - INFO - Scheduler started
+2026-02-25 11:44:02,244 - __main__ - INFO - 定时调度器已启动，每天17:00执行任务
+2026-02-25 13:34:25,520 - src.scheduler.daily_job - INFO - ==================================================
+2026-02-25 13:34:25,521 - src.scheduler.daily_job - INFO - 开始执行竞品监控任务: 2026-02-25
+2026-02-25 13:34:25,521 - src.scheduler.daily_job - INFO - ==================================================
+2026-02-25 13:34:25,522 - src.scheduler.daily_job - WARNING - 未找到昨日快照 (2026-02-24)，将建立基线
+2026-02-25 13:34:25,522 - src.scheduler.daily_job - INFO - Step 2: 抓取今日页面...
+2026-02-25 13:34:25,522 - src.collector.crawler - INFO - 开始爬取站点: LootBar
+2026-02-25 13:34:25,522 - src.collector.browser - INFO - 启动浏览器...
+2026-02-25 13:34:29,764 - src.collector.browser - INFO - 浏览器启动完成
+2026-02-25 13:34:29,764 - src.collector.crawler - INFO - 抓取页面: https://www.lootbar.gg
+2026-02-25 13:34:33,288 - src.collector.crawler - INFO - 抓取页面: https://www.lootbar.gg/top-up/genshin-impact
+2026-02-25 13:34:36,331 - src.collector.crawler - INFO - 抓取页面: https://www.lootbar.gg/top-up/pubg-mobile
+2026-02-25 13:34:38,153 - src.collector.crawler - INFO - 抓取页面: https://www.lootbar.gg/top-up/honkai-star-rail
+2026-02-25 13:34:41,510 - src.collector.crawler - INFO - 抓取页面: https://www.lootbar.gg/top-up/zenless-zone-zero
+2026-02-25 13:34:43,475 - src.collector.crawler - INFO - 抓取页面: https://www.lootbar.gg/top-up/wuthering-waves
+2026-02-25 13:34:45,463 - src.collector.browser - INFO - 关闭浏览器...
+2026-02-25 13:34:45,667 - src.collector.browser - INFO - 浏览器已关闭
+2026-02-25 13:34:45,667 - src.collector.crawler - INFO - 站点爬取完成: LootBar, 成功: 6, 失败: 0
+2026-02-25 13:34:45,667 - src.collector.crawler - INFO - 开始爬取站点: LDShop
+2026-02-25 13:34:45,667 - src.collector.browser - INFO - 启动浏览器...
+2026-02-25 13:34:46,032 - src.collector.browser - INFO - 浏览器启动完成
+2026-02-25 13:34:46,032 - src.collector.crawler - INFO - 抓取页面: https://www.ldshop.gg
+2026-02-25 13:34:48,943 - src.collector.crawler - INFO - 抓取页面: https://www.ldshop.gg/top-up/genshin-impact.html
+2026-02-25 13:34:51,176 - src.collector.crawler - INFO - 抓取页面: https://www.ldshop.gg/top-up/pubg-mobile.html
+2026-02-25 13:34:54,027 - src.collector.crawler - INFO - 抓取页面: https://www.ldshop.gg/top-up/honkai-star-rail.html
+2026-02-25 13:34:57,344 - src.collector.crawler - INFO - 抓取页面: https://www.ldshop.gg/top-up/zenless-zone-zero.html
+2026-02-25 13:34:59,806 - src.collector.crawler - INFO - 抓取页面: https://www.ldshop.gg/top-up/wuthering-waves-gp.html
+2026-02-25 13:35:02,048 - src.collector.browser - INFO - 关闭浏览器...
+2026-02-25 13:35:02,221 - src.collector.browser - INFO - 浏览器已关闭
+2026-02-25 13:35:02,221 - src.collector.crawler - INFO - 站点爬取完成: LDShop, 成功: 6, 失败: 0
+2026-02-25 13:35:02,221 - src.scheduler.daily_job - INFO - Step 3: 提取结构化数据...
+2026-02-25 13:35:03,703 - src.scheduler.daily_job - INFO - Step 4: 差异对比...
+2026-02-25 13:35:03,703 - src.scheduler.daily_job - INFO - 首次运行，跳过差异对比，建立基线
+2026-02-25 13:35:03,703 - src.scheduler.daily_job - INFO - Step 5: 变化归类...
+2026-02-25 13:35:03,703 - src.scheduler.daily_job - INFO - Step 6: 生成报告...
+2026-02-25 13:35:03,703 - src.reporter.report_builder - INFO - 报告已保存: ./reports\competitor_report_2026-02-25.md
+2026-02-25 13:35:03,703 - src.scheduler.daily_job - INFO - 报告已保存: ./reports\competitor_report_2026-02-25.md
+2026-02-25 13:35:03,703 - src.scheduler.daily_job - INFO - Step 7: 发送邮件...
+2026-02-25 13:35:09,893 - src.reporter.mail_sender - INFO - 邮件发送成功: service@topuplive.com
+2026-02-25 13:35:09,893 - src.scheduler.daily_job - INFO - 邮件发送成功
+2026-02-25 13:35:09,893 - src.scheduler.daily_job - INFO - ==================================================
+2026-02-25 13:35:09,893 - src.scheduler.daily_job - INFO - 任务完成: 2026-02-25
+2026-02-25 13:35:09,894 - src.scheduler.daily_job - INFO - ==================================================
+2026-02-25 13:37:20,903 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-02-25 13:37:20,904 - apscheduler.scheduler - INFO - Added job "run_job" to job store "default"
+2026-02-25 13:37:20,904 - apscheduler.scheduler - INFO - Scheduler started
+2026-02-25 13:37:20,905 - __main__ - INFO - 定时调度器已启动，每天17:00执行任务

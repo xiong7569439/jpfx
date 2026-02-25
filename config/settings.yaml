@@ -1,0 +1,54 @@
+# 系统设置
+system:
+  name: "竞品策略监控系统"
+  version: "1.0.0"
+  debug: false
+  
+# 数据路径配置
+paths:
+  snapshot_base: "./data/snapshots"
+  parsed_base: "./data/parsed"
+  history_base: "./data/history"
+  report_output: "./reports"
+  log_dir: "./logs"
+  url_manifest: "./config/url_manifest.json"
+
+# 邮件配置
+mail:
+  enabled: true
+  recipient: "xiongmaojiang@playsentral.com"
+  subject_template: "竞品策略变动日报 - {date}"
+  smtp_host: "smtp.gmail.com"
+  smtp_port: 587
+  smtp_user: "seoxiongmao@gmail.com"
+  smtp_password: "plkg hfpe batl kvky"
+  use_tls: true
+
+# 浏览器配置
+browser:
+  headless: true
+  timeout: 60000
+  retry_times: 3
+  retry_delay: 2000
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+  
+# 反爬配置
+anti_detection:
+  enabled: true
+  random_delay_min: 1000
+  random_delay_max: 3000
+  viewport_width: 1920
+  viewport_height: 1080
+
+# 抓取配置
+crawler:
+  max_concurrent_pages: 3
+  page_load_timeout: 60000
+  wait_for_selector_timeout: 10000
+  
+# 日志配置
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file_max_bytes: 10485760
+  file_backup_count: 5

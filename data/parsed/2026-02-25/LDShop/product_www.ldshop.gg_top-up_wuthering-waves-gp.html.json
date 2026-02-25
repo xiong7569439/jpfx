@@ -1,0 +1,64 @@
+{
+  "url": "https://www.ldshop.gg/top-up/wuthering-waves-gp.html",
+  "prices": [
+    {
+      "raw": "$72",
+      "value": "72",
+      "currency": "USD"
+    }
+  ],
+  "discounts": [
+    {
+      "raw": "15% off",
+      "percentage": "15",
+      "context": "me\ngames\nblog\nsgd | english\nregister now to enjoy 15% off new member gift!\ngo to register >\nwutherin"
+    },
+    {
+      "raw": "15%off",
+      "percentage": "15",
+      "context": "g waves\n\ninstant delivery\n🔥invite friends and get\n15%off, claim now\n\nself top-up now available! reco"
+    },
+    {
+      "raw": "30% off",
+      "percentage": "30",
+      "context": "or aemeath, chisa and lupa\ninstant top-up | up to 30% off\n\nare you still worried about the strength"
+    },
+    {
+      "raw": "5% off",
+      "percentage": "5",
+      "context": "minutes.\n\nsubscribe to get the latest deals\n\nget 5% off discount when you complete your first subsc"
+    }
+  ],
+  "payments": [
+    "visa"
+  ],
+  "delivery_time": [
+    {
+      "raw": "within 30 minutes",
+      "context": ", and generally your selected product will arrive within 30 minutes.\n\nsubscribe to get the latest de"
+    },
+    {
+      "raw": "instant",
+      "context": "es\nwuthering waves (uid top-up)\n\nwuthering waves\n\ninstant delivery\n🔥invite friends and get\n15%off, c"
+    },
+    {
+      "raw": "instant",
+      "context": "$72\nguaranteed bundle for aemeath, chisa and lupa\ninstant top-up | up to 30% off\n\nare you still worr"
+    },
+    {
+      "raw": "instant",
+      "context": ". when you purchase a lunite subscription, you'll instantly receive 300 lunites and then 90 astrites"
+    },
+    {
+      "raw": "5-10 minutes",
+      "context": "cause top-up failure.\n\n*self-service top-up takes 5-10 minutes.\n\n\n \n\nlogin top-up: please do not log"
+    }
+  ],
+  "promotions": [],
+  "games": [
+    "鸣潮"
+  ],
+  "countries": [
+    "美国"
+  ]
+}

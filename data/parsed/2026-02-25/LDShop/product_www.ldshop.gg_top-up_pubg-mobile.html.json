@@ -1,0 +1,59 @@
+{
+  "url": "https://www.ldshop.gg/top-up/pubg-mobile.html",
+  "prices": [],
+  "discounts": [
+    {
+      "raw": "15% off",
+      "percentage": "15",
+      "context": "me\ngames\nblog\nsgd | english\nregister now to enjoy 15% off new member gift!\ngo to register >\n\npubg mo"
+    },
+    {
+      "raw": "15%off",
+      "percentage": "15",
+      "context": "mobile\n\ninstant delivery\n🔥invite friends and get\n15%off, claim now\n\naccounts from taiwan, japan, so"
+    },
+    {
+      "raw": "5% off",
+      "percentage": "5",
+      "context": "&hl=en\n\n \n\nsubscribe to get the latest deals\n\nget 5% off discount when you complete your first subsc"
+    }
+  ],
+  "payments": [
+    "mastercard",
+    "visa",
+    "paypal"
+  ],
+  "delivery_time": [
+    {
+      "raw": "within 10 minutes",
+      "context": "for the pubg uc to arrive?\n\ntypically, uc arrives within 10 minutes. if not, please contact our onli"
+    },
+    {
+      "raw": "instant",
+      "context": "f new member gift!\ngo to register >\n\npubg mobile\n\ninstant delivery\n🔥invite friends and get\n15%off, c"
+    },
+    {
+      "raw": "instant",
+      "context": "coupons and vip membership perks.\n\n⚡fast & safe: instant delivery with secure payment options tailo"
+    },
+    {
+      "raw": "instant",
+      "context": "ompleted, check your uc in-game.\n\nreceive your uc instantly and start customizing. skip the grind of"
+    }
+  ],
+  "promotions": [
+    {
+      "type": "promo_code",
+      "code": "s",
+      "raw": "coupons"
+    }
+  ],
+  "games": [
+    "原神",
+    "PUBG"
+  ],
+  "countries": [
+    "韩国",
+    "日本"
+  ]
+}

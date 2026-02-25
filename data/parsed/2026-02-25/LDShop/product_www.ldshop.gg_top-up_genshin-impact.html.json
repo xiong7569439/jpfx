@@ -1,0 +1,64 @@
+{
+  "url": "https://www.ldshop.gg/top-up/genshin-impact.html",
+  "prices": [
+    {
+      "raw": "$64",
+      "value": "64",
+      "currency": "USD"
+    },
+    {
+      "raw": "$1",
+      "value": "1",
+      "currency": "USD"
+    },
+    {
+      "raw": ", Eur",
+      "value": "",
+      "currency": "EUR"
+    }
+  ],
+  "discounts": [
+    {
+      "raw": "15% off",
+      "percentage": "15",
+      "context": "me\ngames\nblog\nsgd | english\nregister now to enjoy 15% off new member gift!\ngo to register >\ngenshin"
+    },
+    {
+      "raw": "15%off",
+      "percentage": "15",
+      "context": "top-up)\n\ninstant delivery\n🔥invite friends and get\n15%off, claim now\n\nplease select the correct count"
+    },
+    {
+      "raw": "5% off",
+      "percentage": "5",
+      "context": "primogems.\nsubscribe to get the latest deals\n\nget 5% off discount when you complete your first subsc"
+    }
+  ],
+  "payments": [
+    "mastercard",
+    "visa",
+    "ideal",
+    "paypal"
+  ],
+  "delivery_time": [
+    {
+      "raw": "within 5 minutes",
+      "context": "ake for the top-up to arrive?\n\nusually it arrives within 5 minutes. if not, please feel free to cont"
+    },
+    {
+      "raw": "instant",
+      "context": "miliastra wonderland\n\ngenshin impact(uid top-up)\n\ninstant delivery\n🔥invite friends and get\n15%off, c"
+    }
+  ],
+  "promotions": [
+    {
+      "type": "limited_time",
+      "description": "限时活动"
+    }
+  ],
+  "games": [
+    "原神",
+    "绝区零"
+  ],
+  "countries": []
+}

@@ -1,0 +1,93 @@
+# 竞品站点配置
+competitors:
+  - name: "LootBar"
+    domain: "lootbar.gg"
+    base_url: "https://www.lootbar.gg"
+    enabled: true
+    
+  - name: "LDShop"
+    domain: "ldshop.gg"
+    base_url: "https://www.ldshop.gg"
+    enabled: true
+
+# 重点监控国家
+target_countries:
+  - code: "US"
+    name: "美国"
+  - code: "GB"
+    name: "英国"
+  - code: "DE"
+    name: "德国"
+  - code: "FR"
+    name: "法国"
+  - code: "JP"
+    name: "日本"
+  - code: "KR"
+    name: "韩国"
+  - code: "SG"
+    name: "新加坡"
+  - code: "MY"
+    name: "马来西亚"
+  - code: "AU"
+    name: "澳大利亚"
+  - code: "CA"
+    name: "加拿大"
+
+# 重点监控游戏
+target_games:
+  - name: "原神"
+    aliases: ["Genshin Impact", "原神", "Genshin"]
+    
+  - name: "PUBG"
+    aliases: ["PUBG", "PUBG Mobile", "绝地求生", "PlayerUnknown's Battlegrounds"]
+    
+  - name: "崩坏星穹铁道"
+    aliases: ["Honkai Star Rail", "崩坏星穹铁道", "星穹铁道", "Star Rail"]
+    
+  - name: "绝区零"
+    aliases: ["Zenless Zone Zero", "绝区零", "ZZZ"]
+    
+  - name: "鸣潮"
+    aliases: ["Wuthering Waves", "鸣潮"]
+
+# 页面类型定义
+page_types:
+  homepage:
+    name: "首页"
+    description: "主落地页，核心卖点、banner、CTA"
+    priority: 1
+    
+  search:
+    name: "搜索/类目页"
+    description: "游戏/点卡聚合页"
+    priority: 2
+    
+  product:
+    name: "产品页"
+    description: "每个重点游戏的产品页"
+    priority: 1
+    
+  pricing:
+    name: "价格/优惠页"
+    description: "pricing、deals、promo、coupon、discount、bundle"
+    priority: 1
+    
+  checkout:
+    name: "充值流程页"
+    description: "选择面额→支付→确认中能公开访问的步骤"
+    priority: 2
+    
+  policy:
+    name: "政策页"
+    description: "FAQ/Help/Refund/KYC/Delivery/Payment政策"
+    priority: 3
+    
+  affiliate:
+    name: "联盟/返利页"
+    description: "affiliate、referral、partner相关页"
+    priority: 3
+    
+  blog:
+    name: "博客/新闻页"
+    description: "Blog/News/Announcement"
+    priority: 4

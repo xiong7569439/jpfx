@@ -1,0 +1,61 @@
+{
+  "url": "https://www.ldshop.gg/top-up/honkai-star-rail.html",
+  "prices": [
+    {
+      "raw": "$66",
+      "value": "66",
+      "currency": "USD"
+    },
+    {
+      "raw": "$3.49",
+      "value": "3.49",
+      "currency": "USD"
+    },
+    {
+      "raw": ", Eur",
+      "value": "",
+      "currency": "EUR"
+    }
+  ],
+  "discounts": [
+    {
+      "raw": "15% off",
+      "percentage": "15",
+      "context": "me\ngames\nblog\nsgd | english\nregister now to enjoy 15% off new member gift!\ngo to register >\nhonkai:"
+    },
+    {
+      "raw": "15%off",
+      "percentage": "15",
+      "context": "ar rail\n\ninstant delivery\n🔥invite friends and get\n15%off, claim now\n\nfor nameless honor, please proc"
+    },
+    {
+      "raw": "5% off",
+      "percentage": "5",
+      "context": "gress.\n\n \n\nsubscribe to get the latest deals\n\nget 5% off discount when you complete your first subsc"
+    }
+  ],
+  "payments": [
+    "mastercard",
+    "visa",
+    "paypal"
+  ],
+  "delivery_time": [
+    {
+      "raw": "within 10 minutes",
+      "context": "ke for the top-up to arrive?\n\nusually, it arrives within 10 minutes. if not, please feel free to con"
+    },
+    {
+      "raw": "instant",
+      "context": "nkai: star rail(login top-up)\n\nhonkai: star rail\n\ninstant delivery\n🔥invite friends and get\n15%off, c"
+    },
+    {
+      "raw": "immediately",
+      "context": "r in hsr. players will receive 300 oneiric shards immediately upon purchase, and will then earn 90 s"
+    }
+  ],
+  "promotions": [],
+  "games": [
+    "崩坏星穹铁道"
+  ],
+  "countries": []
+}

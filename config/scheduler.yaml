@@ -1,0 +1,73 @@
+# 定时任务配置
+task:
+  name: "竞品策略监控日报（虚拟充值）"
+  schedule: "daily"
+  time: "17:00"
+  timezone: "Asia/Shanghai"
+
+# 策略监控维度定义
+strategy_dimensions:
+  A:
+    code: "A"
+    name: "定价策略"
+    description: "价格/币种/手续费/最低充值额/折扣力度/阶梯价/礼包"
+    priority: 1
+    
+  B:
+    code: "B"
+    name: "促销策略"
+    description: "优惠码、首单/复购、节日活动、倒计时、弹窗活动、满减/买赠"
+    priority: 1
+    
+  C:
+    code: "C"
+    name: "产品策略"
+    description: "新增/下线游戏；新增/下线国家/区服；新增面额；补货/缺货提示"
+    priority: 1
+    
+  D:
+    code: "D"
+    name: "支付策略"
+    description: "新增/下线支付方式（信用卡、PayPal、本地转账等）、风控提示、失败兜底"
+    priority: 1
+    
+  E:
+    code: "E"
+    name: "履约与信任"
+    description: "到账时效承诺、退款/争议政策、KYC/实名/合规声明、客服入口变化"
+    priority: 1
+    
+  F:
+    code: "F"
+    name: "增长渠道"
+    description: "联盟/返利、邀请奖励、合作露出、评论/评分、UGC运营"
+    priority: 2
+    
+  G:
+    code: "G"
+    name: "SEO/内容"
+    description: "新增/删除目录页，Title/Description/H1变化，国家页扩张，内链结构变化"
+    priority: 3
+    
+  H:
+    code: "H"
+    name: "体验与转化"
+    description: "CTA文案与位置、表单步骤变化、强引导弹窗、A/B版本痕迹"
+    priority: 2
+
+# 影响优先级
+impact_levels:
+  high:
+    name: "高"
+    description: "直接影响转化/营收"
+    dimensions: ["A", "B", "C", "D", "E"]
+    
+  medium:
+    name: "中"
+    description: "间接影响或增长相关"
+    dimensions: ["F", "H"]
+    
+  low:
+    name: "低"
+    description: "SEO/内容类变化"
+    dimensions: ["G"]

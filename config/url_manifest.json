@@ -1,0 +1,100 @@
+{
+  "LootBar": [
+    {
+      "type": "homepage",
+      "url": "https://www.lootbar.gg",
+      "description": "首页/主落地页"
+    },
+    {
+      "type": "product",
+      "url": "https://www.lootbar.gg/top-up/genshin-impact",
+      "description": "原神充值页",
+      "game": "原神"
+    },
+    {
+      "type": "product",
+      "url": "https://www.lootbar.gg/top-up/pubg-mobile",
+      "description": "PUBG充值页",
+      "game": "PUBG"
+    },
+    {
+      "type": "product",
+      "url": "https://www.lootbar.gg/top-up/honkai-star-rail",
+      "description": "崩坏星穹铁道充值页",
+      "game": "崩坏星穹铁道"
+    },
+    {
+      "type": "product",
+      "url": "https://www.lootbar.gg/top-up/zenless-zone-zero",
+      "description": "绝区零充值页",
+      "game": "绝区零"
+    },
+    {
+      "type": "product",
+      "url": "https://www.lootbar.gg/top-up/wuthering-waves",
+      "description": "鸣潮充值页",
+      "game": "鸣潮"
+    }
+    {
+      "type": "product",
+      "url": "https://lootbar.gg/blog/",
+      "description": "lootbar博客新闻更新",
+      "game": "lootbar博客新闻"
+    }
+        {
+      "type": "product",
+      "url": "https://lootbar.gg/top-up/",
+      "description": "lootbar全部游戏",
+      "game": "lootbar全部游戏"
+    }
+  ],
+  "LDShop": [
+    {
+      "type": "homepage",
+      "url": "https://www.ldshop.gg",
+      "description": "首页/主落地页"
+    },
+    {
+      "type": "product",
+      "url": "https://www.ldshop.gg/top-up/genshin-impact.html",
+      "description": "原神充值页",
+      "game": "原神"
+    },
+    {
+      "type": "product",
+      "url": "https://www.ldshop.gg/top-up/pubg-mobile.html",
+      "description": "PUBG充值页",
+      "game": "PUBG"
+    },
+    {
+      "type": "product",
+      "url": "https://www.ldshop.gg/top-up/honkai-star-rail.html",
+      "description": "崩坏星穹铁道充值页",
+      "game": "崩坏星穹铁道"
+    },
+    {
+      "type": "product",
+      "url": "https://www.ldshop.gg/top-up/zenless-zone-zero.html",
+      "description": "绝区零充值页",
+      "game": "绝区零"
+    },
+    {
+      "type": "product",
+      "url": "https://www.ldshop.gg/top-up/wuthering-waves-gp.html",
+      "description": "鸣潮充值页",
+      "game": "鸣潮"
+    }
+    {
+      "type": "product",
+      "url": "https://www.ldshop.gg/blog/",
+      "description": "ldshop博客新闻",
+      "game": "ldshop博客新闻"
+    }
+        {
+      "type": "product",
+      "url": "https://www.ldshop.gg/catalog/all",
+      "description": "ldshop商品目录",
+      "game": "ldshop商品目录"
+    }
+  ]
+}

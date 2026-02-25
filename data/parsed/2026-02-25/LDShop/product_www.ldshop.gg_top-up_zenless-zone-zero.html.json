@@ -1,0 +1,67 @@
+{
+  "url": "https://www.ldshop.gg/top-up/zenless-zone-zero.html",
+  "prices": [
+    {
+      "raw": "$66",
+      "value": "66",
+      "currency": "USD"
+    },
+    {
+      "raw": "$3.49",
+      "value": "3.49",
+      "currency": "USD"
+    },
+    {
+      "raw": ", Eur",
+      "value": "",
+      "currency": "EUR"
+    }
+  ],
+  "discounts": [
+    {
+      "raw": "15% off",
+      "percentage": "15",
+      "context": "me\ngames\nblog\nsgd | english\nregister now to enjoy 15% off new member gift!\ngo to register >\nzenless"
+    },
+    {
+      "raw": "15%off",
+      "percentage": "15",
+      "context": "ne zero\n\ninstant delivery\n🔥invite friends and get\n15%off, claim now\n\ndescription\nzenless zone zero z"
+    },
+    {
+      "raw": "5% off",
+      "percentage": "5",
+      "context": "for you.\n\nsubscribe to get the latest deals\n\nget 5% off discount when you complete your first subsc"
+    }
+  ],
+  "payments": [
+    "mastercard",
+    "visa",
+    "paypal"
+  ],
+  "delivery_time": [
+    {
+      "raw": "within 3 minutes",
+      "context": "cessed?\n\ntypically, your top-up will be processed within 3 minutes. if there are any delays, feel fr"
+    },
+    {
+      "raw": "instant",
+      "context": "nless zone zero(login top-up)\n\nzenless zone zero\n\ninstant delivery\n🔥invite friends and get\n15%off, c"
+    },
+    {
+      "raw": "instant",
+      "context": "his 30-day subscription gives you 300 monochromes instantly, and you’ll earn 90 polychromes daily by"
+    }
+  ],
+  "promotions": [
+    {
+      "type": "promo_code",
+      "code": "s",
+      "raw": "coupons"
+    }
+  ],
+  "games": [
+    "绝区零"
+  ],
+  "countries": []
+}
