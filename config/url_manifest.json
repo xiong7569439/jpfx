@@ -1,15 +1,102 @@
 {
+  "TOPUPlive": [
+    {
+      "type": "homepage",
+      "url": "https://www.topuplive.com",
+      "description": "首页/主落地页",
+      "crawl_rules": {
+        "discover_hot_products": true,
+        "discover_max_items": 10
+      }
+    },
+    {
+      "type": "product",
+      "url": "https://www.topuplive.com/genshinImpact/",
+      "description": "原神充值页",
+      "game": "原神"
+    },
+    {
+      "type": "product",
+      "url": "https://www.topuplive.com/pubg-mobile-uc-top-up-global/",
+      "description": "PUBG充值页",
+      "game": "PUBG"
+    },
+    {
+      "type": "product",
+      "url": "https://www.topuplive.com/honkai-star-rail/",
+      "description": "崩坏星穹铁道充值页",
+      "game": "崩坏星穹铁道"
+    },
+    {
+      "type": "product",
+      "url": "https://www.topuplive.com/zenless-zone-zero/",
+      "description": "绝区零充值页",
+      "game": "绝区零"
+    },
+    {
+      "type": "product",
+      "url": "https://www.topuplive.com/wuthering-waves-global/",
+      "description": "鸣潮充值页",
+      "game": "鸣潮"
+    },
+    {
+      "type": "product",
+      "url": "https://www.topuplive.com/mlbb/",
+      "description": "无尽对决充值页",
+      "game": "无尽对决"
+    },
+    {
+      "type": "product",
+      "url": "https://www.topuplive.com/honor-of-kings/",
+      "description": "王者荣耀充值页",
+      "game": "王者荣耀"
+    },
+    {
+      "type": "product",
+      "url": "https://www.topuplive.com/delta-force/",
+      "description": "三角洲行动充值页",
+      "game": "三角洲行动"
+    },
+    {
+      "type": "product",
+      "url": "https://www.topuplive.com/arena-breakout/",
+      "description": "暗区突围充值页",
+      "game": "暗区突围"
+    },
+    {
+      "type": "product",
+      "url": "https://www.topuplive.com/game/game-mobile/",
+      "description": "全部游戏列表页",
+      "game": "全部游戏列表页"
+    }
+  ],
   "LootBar": [
     {
       "type": "homepage",
       "url": "https://www.lootbar.gg",
-      "description": "首页/主落地页"
+      "description": "首页/主落地页",
+      "crawl_rules": {
+        "handle_popup": true,
+        "popup_close_selector": "[class*='close'], [class*='modal'] button, .dialog-close, [aria-label='close'], [aria-label='Close']",
+        "extract_carousel": true,
+        "carousel_selector": "[class*='banner'], [class*='carousel'], [class*='swiper'], [class*='slider']",
+        "extract_trending": true,
+        "trending_selector": "[class*='trending'], [class*='hot'], [class*='popular'], [class*='recommend']",
+        "trending_count": 5,
+        "discover_hot_products": true,
+        "discover_max_items": 10
+      }
     },
     {
       "type": "product",
       "url": "https://www.lootbar.gg/top-up/genshin-impact",
       "description": "原神充值页",
-      "game": "原神"
+      "game": "原神",
+      "crawl_rules": {
+        "extract_sku_detail": true,
+        "highlight_skus": ["Blessing of the Welkin Moon", "6480", "6080"],
+        "extract_discount_tag": true
+      }
     },
     {
       "type": "product",
@@ -21,7 +108,35 @@
       "type": "product",
       "url": "https://www.lootbar.gg/top-up/honkai-star-rail",
       "description": "崩坏星穹铁道充值页",
-      "game": "崩坏星穹铁道"
+      "game": "崩坏星穹铁道",
+      "crawl_rules": {
+        "extract_sku_detail": true,
+        "extract_discount_tag": true
+      }
+    },
+      {
+      "type": "product",
+      "url": "https://lootbar.gg/top-up/mobile-legends-bang-bang",
+      "description": "lootbar无尽对决",
+      "game": "无尽对决"
+    },
+    {
+      "type": "product",
+      "url": "https://lootbar.gg/top-up/honor-of-kings",
+      "description": "lootbar王者荣耀",
+      "game": "王者荣耀"
+    },
+    {
+      "type": "product",
+      "url": "https://lootbar.gg/top-up/delta-force",
+      "description": "lootbar三角洲行动充值页",
+      "game": "三角洲行动"
+    },
+    {
+      "type": "product",
+      "url": "https://lootbar.gg/top-up/arena-breakout",
+      "description": "lootbar暗区突围",
+      "game": "暗区突围"
     },
     {
       "type": "product",
@@ -34,37 +149,68 @@
       "url": "https://www.lootbar.gg/top-up/wuthering-waves",
       "description": "鸣潮充值页",
       "game": "鸣潮"
-    }
+    },
     {
       "type": "product",
-      "url": "https://lootbar.gg/blog/",
-      "description": "lootbar博客新闻更新",
-      "game": "lootbar博客新闻"
-    }
-        {
-      "type": "product",
       "url": "https://lootbar.gg/top-up/",
-      "description": "lootbar全部游戏",
-      "game": "lootbar全部游戏"
+      "description": "lootbar全部游戏列表页",
+      "game": "lootbar全部游戏列表页"
+    }
+  ],
+  "Trustpilot": [
+    {
+      "type": "review",
+      "url": "https://www.trustpilot.com/review/www.lootbar.gg",
+      "description": "LootBar Trustpilot评价页",
+      "site": "LootBar",
+      "crawl_rules": {
+        "extract_trustpilot_rating": true
+      }
+    },
+    {
+      "type": "review",
+      "url": "https://www.trustpilot.com/review/www.ldshop.gg",
+      "description": "LDShop Trustpilot评价页",
+      "site": "LDShop",
+      "crawl_rules": {
+        "extract_trustpilot_rating": true
+      }
     }
   ],
   "LDShop": [
     {
       "type": "homepage",
       "url": "https://www.ldshop.gg",
-      "description": "首页/主落地页"
+      "description": "首页/主落地页",
+      "crawl_rules": {
+        "scroll_to_promotions": true,
+        "extract_announcements": true,
+        "announcement_count": 2,
+        "discover_hot_products": true,
+        "discover_max_items": 10
+      }
     },
     {
       "type": "product",
       "url": "https://www.ldshop.gg/top-up/genshin-impact.html",
       "description": "原神充值页",
-      "game": "原神"
+      "game": "原神",
+      "crawl_rules": {
+        "set_currency_usd": true,
+        "extract_sku_detail": true,
+        "extract_payment_promo": true
+      }
     },
     {
       "type": "product",
       "url": "https://www.ldshop.gg/top-up/pubg-mobile.html",
       "description": "PUBG充值页",
-      "game": "PUBG"
+      "game": "PUBG",
+      "crawl_rules": {
+        "set_currency_usd": true,
+        "extract_sku_detail": true,
+        "extract_payment_promo": true
+      }
     },
     {
       "type": "product",
@@ -78,23 +224,131 @@
       "description": "绝区零充值页",
       "game": "绝区零"
     },
+      {
+      "type": "product",
+      "url": "https://www.ldshop.gg/top-up/mobile-legends-bang-bang.html",
+      "description": "ldshop无尽对决",
+      "game": "无尽对决"
+    },
+    {
+      "type": "product",
+      "url": "https://www.ldshop.gg/top-up/honor-of-kings.html",
+      "description": "ldshop王者荣耀",
+      "game": "王者荣耀"
+    },
+    {
+      "type": "product",
+      "url": "https://www.ldshop.gg/top-up/delta-force.html",
+      "description": "ldshop三角洲行动充值页",
+      "game": "三角洲行动"
+    },
+    {
+      "type": "product",
+      "url": "https://www.ldshop.gg/top-up/arena-breakout.html",
+      "description": "ldshop暗区突围",
+      "game": "暗区突围"
+    },
     {
       "type": "product",
       "url": "https://www.ldshop.gg/top-up/wuthering-waves-gp.html",
       "description": "鸣潮充值页",
       "game": "鸣潮"
-    }
+    },
     {
       "type": "product",
-      "url": "https://www.ldshop.gg/blog/",
-      "description": "ldshop博客新闻",
-      "game": "ldshop博客新闻"
-    }
-        {
-      "type": "product",
       "url": "https://www.ldshop.gg/catalog/all",
-      "description": "ldshop商品目录",
-      "game": "ldshop商品目录"
+      "description": "ldshop全部游戏列表页-第1页",
+      "game": "ldshop全部游戏列表页"
+    },
+    {
+      "type": "product",
+      "url": "https://www.ldshop.gg/catalog/all?page=2",
+      "description": "ldshop全部游戏列表页-第2页",
+      "game": "ldshop全部游戏列表页"
+    },
+    {
+      "type": "product",
+      "url": "https://www.ldshop.gg/catalog/all?page=3",
+      "description": "ldshop全部游戏列表页-第3页",
+      "game": "ldshop全部游戏列表页"
+    },
+    {
+      "type": "product",
+      "url": "https://www.ldshop.gg/catalog/all?page=4",
+      "description": "ldshop全部游戏列表页-第4页",
+      "game": "ldshop全部游戏列表页"
+    },
+    {
+      "type": "product",
+      "url": "https://www.ldshop.gg/catalog/all?page=5",
+      "description": "ldshop全部游戏列表页-第5页",
+      "game": "ldshop全部游戏列表页"
+    },
+    {
+      "type": "product",
+      "url": "https://www.ldshop.gg/catalog/all?page=6",
+      "description": "ldshop全部游戏列表页-第6页",
+      "game": "ldshop全部游戏列表页"
+    },
+    {
+      "type": "product",
+      "url": "https://www.ldshop.gg/catalog/all?page=7",
+      "description": "ldshop全部游戏列表页-第7页",
+      "game": "ldshop全部游戏列表页"
+    },
+    {
+      "type": "product",
+      "url": "https://www.ldshop.gg/catalog/all?page=8",
+      "description": "ldshop全部游戏列表页-第8页",
+      "game": "ldshop全部游戏列表页"
+    },
+    {
+      "type": "product",
+      "url": "https://www.ldshop.gg/catalog/all?page=9",
+      "description": "ldshop全部游戏列表页-第9页",
+      "game": "ldshop全部游戏列表页"
+    },
+    {
+      "type": "product",
+      "url": "https://www.ldshop.gg/catalog/all?page=10",
+      "description": "ldshop全部游戏列表页-第10页",
+      "game": "ldshop全部游戏列表页"
+    },
+    {
+      "type": "product",
+      "url": "https://www.ldshop.gg/catalog/all?page=11",
+      "description": "ldshop全部游戏列表页-第11页",
+      "game": "ldshop全部游戏列表页"
+    },
+    {
+      "type": "product",
+      "url": "https://www.ldshop.gg/catalog/all?page=12",
+      "description": "ldshop全部游戏列表页-第12页",
+      "game": "ldshop全部游戏列表页"
+    },
+    {
+      "type": "product",
+      "url": "https://www.ldshop.gg/catalog/all?page=13",
+      "description": "ldshop全部游戏列表页-第13页",
+      "game": "ldshop全部游戏列表页"
+    },
+    {
+      "type": "product",
+      "url": "https://www.ldshop.gg/catalog/all?page=14",
+      "description": "ldshop全部游戏列表页-第14页",
+      "game": "ldshop全部游戏列表页"
+    },
+    {
+      "type": "product",
+      "url": "https://www.ldshop.gg/catalog/all?page=15",
+      "description": "ldshop全部游戏列表页-第15页",
+      "game": "ldshop全部游戏列表页"
+    },
+    {
+      "type": "product",
+      "url": "https://www.ldshop.gg/catalog/all?page=16",
+      "description": "ldshop全部游戏列表页-第16页",
+      "game": "ldshop全部游戏列表页"
     }
   ]
 }

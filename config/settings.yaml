@@ -17,11 +17,11 @@ paths:
 mail:
   enabled: true
   recipient: "xiongmaojiang@playsentral.com"
-  subject_template: "竞品策略变动日报 - {date}"
+  subject_template: "竞品策略变动日报 - {date} -语言：英文 货币:USD"
   smtp_host: "smtp.gmail.com"
   smtp_port: 587
   smtp_user: "seoxiongmao@gmail.com"
-  smtp_password: "plkg hfpe batl kvky"
+  smtp_password: "dsbh crxk vtql joka"
   use_tls: true
 
 # 浏览器配置
@@ -39,6 +39,20 @@ anti_detection:
   random_delay_max: 3000
   viewport_width: 1920
   viewport_height: 1080
+
+# 代理配置 - 固定使用美国IP确保货币一致性
+proxy:
+  enabled: true  # 设置为true时启用代理
+  # 代理服务器配置 (支持 http, https, socks5)
+  # 格式: "protocol://user:pass@host:port" 或 "protocol://host:port"
+  server: "http://127.0.0.1:10090"
+  # 可选：代理认证信息
+  username: ""
+  password: ""
+  # 固定地理位置设置 (用于确保货币一致性)
+  # 可选值: US (美国), SG (新加坡), JP (日本), KR (韩国) 等
+  # 建议统一使用 US，因为 USD 是通用对比基准
+  geo_target: "US"
 
 # 抓取配置
 crawler:

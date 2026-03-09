@@ -72,8 +72,7 @@ class ChangeClassifier:
         }
     }
     
-    def __init__(self):
-        pass
+    # 修改：移除了空的__init__方法，使用默认的类初始化
         
     def classify(self, change: Dict[str, Any]) -> List[str]:
         """
@@ -85,34 +84,54 @@ class ChangeClassifier:
         Returns:
             维度代码列表（可能有多个）
         """
-        dimensions = []
+        # 修改：使用集合去重，避免重复判断
+        dimensions = set()
         
-        # 1. 根据字段类型判断
-        field = change.get('field', '')
-        for code, dim in self.DIMENSIONS.items():
-            if field in dim.get('fields', []):
-                dimensions.append(code)
-                
+        # 1. 优先根据结构化变化的字段类型判断
+        structured_changes = change.get('structured_changes', [])
+        for sc in structured_changes:
+            field = sc.get('field', '')
+            for code, dim in self.DIMENSIONS.items():
+                if field in dim.get('fields', []):
+                    dimensions.add(code)
+        
         # 2. 根据描述内容关键词判断
         description = change.get('description', '').lower()
         for code, dim in self.DIMENSIONS.items():
             for keyword in dim.get('keywords', []):
                 if keyword.lower() in description:
-                    if code not in dimensions:
-                        dimensions.append(code)
+                    dimensions.add(code)
                     break
-                    
-        # 3. 根据变化类型辅助判断
-        if not dimensions:
-            # 标题变化 -> SEO/内容
-            if change.get('title_changed'):
-                dimensions.append('G')
+        
+        # 3. 根据页面类型辅助判断
+        page_type = change.get('page_type', '').lower()
+        if page_type == 'homepage':
+            dimensions.add('G')  # 首页变化通常涉及SEO/内容
+        elif page_type == 'product':
+            dimensions.add('C')  # 产品页变化通常涉及产品策略
+        elif page_type in ['pricing', 'promo', 'deal']:
+            dimensions.add('A')  # 价格页变化涉及定价策略
+        elif page_type in ['faq', 'help', 'refund', 'kyc']:
+            dimensions.add('E')  # 政策页变化涉及履约与信任
+        
+        # 4. 根据变化类型辅助判断
+        if change.get('title_changed'):
+            dimensions.add('G')
                 
-        # 默认分类
+        # 5. 默认分类（减少H维度的默认使用）
         if not dimensions:
-            dimensions.append('H')  # 体验与转化作为默认
+            # 根据变化内容特征选择最可能的维度
+            if any(k in description for k in ['新增', '添加', '上线', '发布']):
+                dimensions.add('C')  # 产品策略
+            elif any(k in description for k in ['移除', '删除', '下线', '取消']):
+                dimensions.add('C')  # 产品策略
+            elif 'blog' in page_type or 'news' in page_type:
+                dimensions.add('G')  # SEO/内容
+            else:
+                dimensions.add('H')  # 最后才使用体验与转化
             
-        return dimensions
+        # 修改：将集合转换为列表返回
+        return list(dimensions)
         
     def get_impact_level(self, dimensions: List[str]) -> str:
         """

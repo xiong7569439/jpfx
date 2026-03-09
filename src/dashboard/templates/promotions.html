@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}促销策略 - 竞品监控仪表盘{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-800 mb-2">促销策略分析</h1>
+    <p class="text-gray-600">监控各站点的促销活动与策略</p>
+</div>
+
+<!-- 促销统计卡片 -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-gray-500 text-sm font-medium mb-2">总促销数</h3>
+        <p id="total-promotions" class="text-3xl font-bold text-blue-600">--</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-gray-500 text-sm font-medium mb-2">折扣促销</h3>
+        <p id="discount-count" class="text-3xl font-bold text-green-600">--</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-gray-500 text-sm font-medium mb-2">优惠码</h3>
+        <p id="coupon-count" class="text-3xl font-bold text-purple-600">--</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-gray-500 text-sm font-medium mb-2">其他促销</h3>
+        <p id="other-count" class="text-3xl font-bold text-orange-600">--</p>
+    </div>
+</div>
+
+<!-- 促销图表 -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">促销类型分布</h2>
+        <div class="relative h-64">
+            <canvas id="promotion-type-chart"></canvas>
+        </div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">各站点促销数</h2>
+        <div class="relative h-64">
+            <canvas id="promotion-site-chart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- 促销详情列表 -->
+<div class="bg-white rounded-lg shadow p-6">
+    <h2 class="text-xl font-bold text-gray-800 mb-4">促销详情</h2>
+    <div class="overflow-x-auto">
+        <table class="min-w-full">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">站点</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">游戏</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">促销类型</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">促销内容</th>
+                </tr>
+            </thead>
+            <tbody id="promotions-tbody" class="bg-white divide-y divide-gray-200">
+                <!-- 动态填充 -->
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let promotionTypeChart = null;
+let promotionSiteChart = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadPromotionsData();
+});
+
+// 加载促销数据
+async function loadPromotionsData() {
+    try {
+        const response = await fetch('/api/promotions');
+        const data = await response.json();
+        
+        updatePromotionStats(data);
+        renderPromotionCharts(data);
+        updatePromotionsTable(data);
+    } catch (error) {
+        console.error('加载促销数据失败:', error);
+    }
+}
+
+// 更新促销统计
+function updatePromotionStats(data) {
+    const summary = data.promotion_summary || {};
+    document.getElementById('total-promotions').textContent = summary.total_promotions || 0;
+    
+    const byType = summary.promotions_by_type || {};
+    document.getElementById('discount-count').textContent = byType['折扣'] || byType['discount'] || 0;
+    document.getElementById('coupon-count').textContent = byType['优惠码'] || byType['coupon'] || 0;
+    
+    const otherCount = (summary.total_promotions || 0) - 
+        ((byType['折扣'] || byType['discount'] || 0) + (byType['优惠码'] || byType['coupon'] || 0));
+    document.getElementById('other-count').textContent = Math.max(0, otherCount);
+}
+
+// 渲染促销图表
+function renderPromotionCharts(data) {
+    // 促销类型分布
+    const typeCtx = document.getElementById('promotion-type-chart').getContext('2d');
+    const typeData = data.promotion_summary?.promotions_by_type || {};
+    
+    if (promotionTypeChart) {
+        promotionTypeChart.destroy();
+    }
+    
+    promotionTypeChart = new Chart(typeCtx, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(typeData),
+            datasets: [{
+                data: Object.values(typeData),
+                backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right'
+                }
+            }
+        }
+    });
+    
+    // 各站点促销数
+    const siteCtx = document.getElementById('promotion-site-chart').getContext('2d');
+    const siteData = data.promotions_by_site || {};
+    
+    if (promotionSiteChart) {
+        promotionSiteChart.destroy();
+    }
+    
+    promotionSiteChart = new Chart(siteCtx, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(siteData),
+            datasets: [{
+                label: '促销数',
+                data: Object.values(siteData).map(p => p.length),
+                backgroundColor: '#3B82F6'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+}
+
+// 更新促销表格
+function updatePromotionsTable(data) {
+    const tbody = document.getElementById('promotions-tbody');
+    tbody.innerHTML = '';
+    
+    const promotionsBySite = data.promotions_by_site || {};
+    let hasData = false;
+    
+    Object.entries(promotionsBySite).forEach(([site, promotions]) => {
+        promotions.forEach(promo => {
+            hasData = true;
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${site}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${promo.game || '-'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${promo.type || '-'}</td>
+                <td class="px-6 py-4 text-sm text-gray-500">${promo.content || '-'}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    });
+    
+    if (!hasData) {
+        tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">暂无促销数据</td></tr>';
+    }
+}
+</script>
+{% endblock %}

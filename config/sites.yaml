@@ -1,5 +1,11 @@
 # 竞品站点配置
 competitors:
+  - name: "TOPUPlive"
+    domain: "topuplive.com"
+    base_url: "https://www.topuplive.com"
+    enabled: true
+    is_own_site: true
+    
   - name: "LootBar"
     domain: "lootbar.gg"
     base_url: "https://www.lootbar.gg"
@@ -9,6 +15,12 @@ competitors:
     domain: "ldshop.gg"
     base_url: "https://www.ldshop.gg"
     enabled: true
+
+  - name: "Trustpilot"
+    domain: "trustpilot.com"
+    base_url: "https://www.trustpilot.com"
+    enabled: true
+    description: "第三方评价平台，用于获取竞品真实用户评价数据"
 
 # 重点监控国家
 target_countries:
@@ -49,6 +61,18 @@ target_games:
     
   - name: "鸣潮"
     aliases: ["Wuthering Waves", "鸣潮"]
+    
+  - name: "无尽对决"
+    aliases: ["Mobile Legends", "MLBB", "无尽对决"]
+    
+  - name: "王者荣耀"
+    aliases: ["Honor of Kings", "王者荣耀", "HOK"]
+    
+  - name: "三角洲行动"
+    aliases: ["Delta Force", "三角洲行动"]
+    
+  - name: "暗区突围"
+    aliases: ["Arena Breakout", "暗区突围"]
 
 # 页面类型定义
 page_types:

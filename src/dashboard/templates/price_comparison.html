@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}价格对比 - 竞品监控仪表盘{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-800 mb-2">价格对比</h1>
+    <p class="text-gray-600">今日各游戏在不同站点的价格对比</p>
+</div>
+
+<!-- 日期选择 -->
+<div class="bg-white rounded-lg shadow p-4 mb-8">
+    <div class="flex items-center gap-4">
+        <label class="text-sm font-medium text-gray-700">选择日期:</label>
+        <input type="date" id="date-picker" class="border rounded px-3 py-2">
+        <button id="load-btn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+            加载数据
+        </button>
+    </div>
+</div>
+
+<!-- 价格对比表格 -->
+<div class="bg-white rounded-lg shadow p-6 mb-8">
+    <h2 class="text-xl font-bold text-gray-800 mb-4">价格对比详情</h2>
+    <div class="overflow-x-auto">
+        <table class="min-w-full">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">游戏</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">最低价</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">最高价</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">价差</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">价差比例</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">站点数</th>
+                </tr>
+            </thead>
+            <tbody id="comparison-tbody" class="bg-white divide-y divide-gray-200">
+                <!-- 动态填充 -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 各站点价格详情 -->
+<div class="bg-white rounded-lg shadow p-6">
+    <h2 class="text-xl font-bold text-gray-800 mb-4">各站点价格详情</h2>
+    <div id="site-details" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- 动态填充 -->
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 设置默认日期为今天
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('date-picker').value = today;
+    
+    // 加载数据
+    loadPriceComparison(today);
+    
+    document.getElementById('load-btn').addEventListener('click', function() {
+        const date = document.getElementById('date-picker').value;
+        if (date) {
+            loadPriceComparison(date);
+        }
+    });
+});
+
+// 加载价格对比数据
+async function loadPriceComparison(date) {
+    try {
+        const response = await fetch('/api/price-comparison');
+        const data = await response.json();
+        
+        updateComparisonTable(data);
+        updateSiteDetails(data);
+    } catch (error) {
+        console.error('加载价格对比失败:', error);
+    }
+}
+
+// 更新对比表格
+function updateComparisonTable(data) {
+    const tbody = document.getElementById('comparison-tbody');
+    tbody.innerHTML = '';
+    
+    if (!data.comparisons || data.comparisons.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">暂无数据</td></tr>';
+        return;
+    }
+    
+    data.comparisons.forEach(comp => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${comp.game}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">${comp.cheapest_site} (${comp.cheapest_price})</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-medium">${comp.most_expensive_site} (${comp.most_expensive_price})</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${comp.price_diff}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${comp.price_diff_pct}%</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${comp.sites_count || '-'}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// 更新站点详情
+function updateSiteDetails(data) {
+    const container = document.getElementById('site-details');
+    container.innerHTML = '';
+    
+    if (!data.comparisons || data.comparisons.length === 0) {
+        container.innerHTML = '<p class="text-gray-500 col-span-3 text-center">暂无数据</p>';
+        return;
+    }
+    
+    // 按游戏分组显示各站点价格
+    data.comparisons.forEach(comp => {
+        const card = document.createElement('div');
+        card.className = 'border rounded-lg p-4';
+        
+        let pricesHtml = '';
+        if (comp.all_prices) {
+            pricesHtml = Object.entries(comp.all_prices).map(([site, price]) => {
+                const isCheapest = site === comp.cheapest_site;
+                const isExpensive = site === comp.most_expensive_site;
+                let colorClass = 'text-gray-600';
+                if (isCheapest) colorClass = 'text-green-600 font-medium';
+                if (isExpensive) colorClass = 'text-red-600 font-medium';
+                return `<div class="flex justify-between py-1"><span>${site}:</span><span class="${colorClass}">${price}</span></div>`;
+            }).join('');
+        }
+        
+        card.innerHTML = `
+            <h3 class="font-bold text-lg mb-3 text-gray-800">${comp.game}</h3>
+            <div class="text-sm">
+                ${pricesHtml || '<p class="text-gray-500">无详细价格数据</p>'}
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+</script>
+{% endblock %}

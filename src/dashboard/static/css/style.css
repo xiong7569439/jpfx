@@ -1,0 +1,111 @@
+/* 自定义样式 */
+
+/* 卡片悬停效果 */
+.bg-white {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.bg-white:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* 表格样式优化 */
+table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+th {
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+/* 图表容器 */
+.relative {
+    position: relative;
+}
+
+/* 加载动画 */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.loading {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    nav .flex.space-x-4 {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    nav a {
+        font-size: 0.875rem;
+        padding: 0.25rem 0.5rem;
+    }
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* 关键词标签 */
+#keywords-cloud span {
+    transition: all 0.2s ease;
+}
+
+#keywords-cloud span:hover {
+    transform: scale(1.05);
+    background-color: #dbeafe;
+}
+
+/* 评分颜色 */
+.score-high {
+    color: #10b981;
+}
+
+.score-medium {
+    color: #f59e0b;
+}
+
+.score-low {
+    color: #ef4444;
+}
+
+/* 导航栏激活状态 */
+nav a.active {
+    background-color: rgba(255, 255, 255, 0.2);
+}

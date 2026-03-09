@@ -1,0 +1,430 @@
+{% extends "base.html" %}
+
+{% block title %}概览 - 竞品监控仪表盘{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-800 mb-2">竞品监控仪表盘</h1>
+    <p class="text-gray-600">实时监控竞品价格、促销和用户反馈</p>
+</div>
+
+<!-- 关键指标卡片 -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- 价格竞争力 -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-gray-500 text-sm font-medium">价格竞争力</h3>
+            <span class="text-green-500 text-2xl">🎯</span>
+        </div>
+        <div id="competitiveness-score">
+            <p class="text-3xl font-bold text-gray-800">--</p>
+            <p class="text-sm text-gray-500">平均评分</p>
+        </div>
+    </div>
+
+    <!-- 活跃促销数 -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-gray-500 text-sm font-medium">活跃促销</h3>
+            <span class="text-blue-500 text-2xl">🏷️</span>
+        </div>
+        <div id="active-promotions">
+            <p class="text-3xl font-bold text-gray-800">--</p>
+            <p class="text-sm text-gray-500">今日促销数</p>
+        </div>
+    </div>
+
+    <!-- 平均评分 -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-gray-500 text-sm font-medium">用户评分</h3>
+            <span class="text-yellow-500 text-2xl">⭐</span>
+        </div>
+        <div id="avg-rating">
+            <p class="text-3xl font-bold text-gray-800">--</p>
+            <p class="text-sm text-gray-500">平均评分</p>
+        </div>
+    </div>
+
+    <!-- 监控站点 -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-gray-500 text-sm font-medium">监控站点</h3>
+            <span class="text-purple-500 text-2xl">🌐</span>
+        </div>
+        <div id="monitored-sites">
+            <p class="text-3xl font-bold text-gray-800">--</p>
+            <p class="text-sm text-gray-500">活跃站点</p>
+        </div>
+    </div>
+</div>
+
+<!-- 价格趋势图表 -->
+<div class="bg-white rounded-lg shadow p-6 mb-8">
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-bold text-gray-800">价格趋势（7日）</h2>
+        <select id="game-selector" class="border rounded px-3 py-2">
+            <option value="">选择游戏...</option>
+        </select>
+    </div>
+    <div class="relative h-96">
+        <canvas id="price-trend-chart"></canvas>
+    </div>
+</div>
+
+<!-- 今日价格对比 -->
+<div class="bg-white rounded-lg shadow p-6 mb-8">
+    <h2 class="text-xl font-bold text-gray-800 mb-6">今日价格对比</h2>
+    <div id="price-comparison-table" class="overflow-x-auto">
+        <table class="min-w-full">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">游戏</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">最低价</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">最高价</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">价差</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">我方位置</th>
+                </tr>
+            </thead>
+            <tbody id="comparison-tbody" class="bg-white divide-y divide-gray-200">
+                <!-- 动态填充 -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 促销策略概览 -->
+<div class="bg-white rounded-lg shadow p-6 mb-8">
+    <h2 class="text-xl font-bold text-gray-800 mb-6">促销策略概览</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+            <h3 class="text-lg font-medium text-gray-700 mb-4">促销类型分布</h3>
+            <div class="relative h-64">
+                <canvas id="promotion-type-chart"></canvas>
+            </div>
+        </div>
+        <div>
+            <h3 class="text-lg font-medium text-gray-700 mb-4">各站点促销数</h3>
+            <div class="relative h-64">
+                <canvas id="promotion-site-chart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 用户反馈概览 -->
+<div class="bg-white rounded-lg shadow p-6">
+    <h2 class="text-xl font-bold text-gray-800 mb-6">用户反馈概览</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div>
+            <h3 class="text-lg font-medium text-gray-700 mb-4">情感分布</h3>
+            <div class="relative h-48">
+                <canvas id="sentiment-chart"></canvas>
+            </div>
+        </div>
+        <div class="md:col-span-2">
+            <h3 class="text-lg font-medium text-gray-700 mb-4">高频关键词</h3>
+            <div id="keywords-cloud" class="flex flex-wrap gap-2">
+                <!-- 动态填充 -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 初始化仪表盘数据
+let priceTrendChart = null;
+let promotionTypeChart = null;
+let promotionSiteChart = null;
+let sentimentChart = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadDashboardData();
+    loadGames();
+});
+
+// 加载仪表盘数据
+async function loadDashboardData() {
+    try {
+        // 加载价格趋势
+        const trendsResponse = await fetch('/api/price-trends?days=7');
+        const trendsData = await trendsResponse.json();
+        updateCompetitivenessScore(trendsData);
+        
+        // 加载价格对比
+        const comparisonResponse = await fetch('/api/price-comparison');
+        const comparisonData = await comparisonResponse.json();
+        updatePriceComparisonTable(comparisonData);
+        
+        // 加载促销数据
+        const promoResponse = await fetch('/api/promotions');
+        const promoData = await promoResponse.json();
+        updatePromotionCharts(promoData);
+        updateActivePromotions(promoData);
+        
+        // 加载反馈数据
+        const reviewResponse = await fetch('/api/reviews');
+        const reviewData = await reviewResponse.json();
+        updateSentimentChart(reviewData);
+        updateKeywordsCloud(reviewData);
+        updateAvgRating(reviewData);
+        
+        // 加载站点数
+        const sitesResponse = await fetch('/api/sites');
+        const sitesData = await sitesResponse.json();
+        document.querySelector('#monitored-sites p').textContent = sitesData.length;
+        
+    } catch (error) {
+        console.error('加载仪表盘数据失败:', error);
+    }
+}
+
+// 加载游戏列表
+async function loadGames() {
+    try {
+        const response = await fetch('/api/games');
+        const games = await response.json();
+        const selector = document.getElementById('game-selector');
+        
+        games.forEach(game => {
+            const option = document.createElement('option');
+            option.value = game.name;
+            option.textContent = game.name;
+            selector.appendChild(option);
+        });
+        
+        // 默认选择第一个游戏并加载图表
+        if (games.length > 0) {
+            selector.value = games[0].name;
+            loadPriceTrendChart(games[0].name);
+        }
+        
+        selector.addEventListener('change', (e) => {
+            if (e.target.value) {
+                loadPriceTrendChart(e.target.value);
+            }
+        });
+    } catch (error) {
+        console.error('加载游戏列表失败:', error);
+    }
+}
+
+// 加载价格趋势图表
+async function loadPriceTrendChart(game) {
+    try {
+        const response = await fetch(`/api/historical-data?game=${encodeURIComponent(game)}&days=7`);
+        const data = await response.json();
+        
+        renderPriceTrendChart(data);
+    } catch (error) {
+        console.error('加载价格趋势失败:', error);
+    }
+}
+
+// 渲染价格趋势图表
+function renderPriceTrendChart(data) {
+    const ctx = document.getElementById('price-trend-chart').getContext('2d');
+    
+    if (priceTrendChart) {
+        priceTrendChart.destroy();
+    }
+    
+    const dates = data.data.map(d => d.date);
+    const sites = [...new Set(data.data.flatMap(d => Object.keys(d.prices)))];
+    
+    const datasets = sites.map((site, index) => {
+        const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
+        return {
+            label: site,
+            data: data.data.map(d => d.prices[site]?.price || null),
+            borderColor: colors[index % colors.length],
+            backgroundColor: colors[index % colors.length] + '20',
+            tension: 0.4,
+            fill: false
+        };
+    });
+    
+    priceTrendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: `${data.game} - 7日价格趋势`
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: '价格 (USD)'
+                    }
+                }
+            }
+        }
+    });
+}
+
+// 更新竞争力评分
+function updateCompetitivenessScore(data) {
+    const competitiveness = data.competitiveness || {};
+    let totalScore = 0;
+    let count = 0;
+    
+    Object.values(competitiveness).forEach(comp => {
+        if (comp.competitiveness_score) {
+            totalScore += comp.competitiveness_score;
+            count++;
+        }
+    });
+    
+    const avgScore = count > 0 ? Math.round(totalScore / count) : 0;
+    document.querySelector('#competitiveness-score p').textContent = avgScore + '/100';
+}
+
+// 更新价格对比表格
+function updatePriceComparisonTable(data) {
+    const tbody = document.getElementById('comparison-tbody');
+    tbody.innerHTML = '';
+    
+    data.comparisons.forEach(comp => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${comp.game}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${comp.cheapest_site} (${comp.cheapest_price})</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${comp.most_expensive_site} (${comp.most_expensive_price})</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${comp.price_diff_pct}%</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">-</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// 更新促销图表
+function updatePromotionCharts(data) {
+    // 促销类型分布
+    const typeCtx = document.getElementById('promotion-type-chart').getContext('2d');
+    const typeData = data.promotion_summary?.promotions_by_type || {};
+    
+    if (promotionTypeChart) {
+        promotionTypeChart.destroy();
+    }
+    
+    promotionTypeChart = new Chart(typeCtx, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(typeData),
+            datasets: [{
+                data: Object.values(typeData),
+                backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right'
+                }
+            }
+        }
+    });
+    
+    // 各站点促销数
+    const siteCtx = document.getElementById('promotion-site-chart').getContext('2d');
+    const siteData = data.promotions_by_site || {};
+    
+    if (promotionSiteChart) {
+        promotionSiteChart.destroy();
+    }
+    
+    promotionSiteChart = new Chart(siteCtx, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(siteData),
+            datasets: [{
+                label: '促销数',
+                data: Object.values(siteData).map(p => p.length),
+                backgroundColor: '#3B82F6'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+}
+
+// 更新活跃促销数
+function updateActivePromotions(data) {
+    const count = data.promotion_summary?.total_promotions || 0;
+    document.querySelector('#active-promotions p').textContent = count;
+}
+
+// 更新情感分布图表
+function updateSentimentChart(data) {
+    const ctx = document.getElementById('sentiment-chart').getContext('2d');
+    const sentiment = data.sentiment_summary?.sentiment_distribution || {};
+    
+    if (sentimentChart) {
+        sentimentChart.destroy();
+    }
+    
+    sentimentChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: ['正面', '负面', '中性'],
+            datasets: [{
+                data: [
+                    sentiment.positive || 0,
+                    sentiment.negative || 0,
+                    sentiment.neutral || 0
+                ],
+                backgroundColor: ['#10B981', '#EF4444', '#9CA3AF']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+}
+
+// 更新关键词云
+function updateKeywordsCloud(data) {
+    const container = document.getElementById('keywords-cloud');
+    const keywords = data.keyword_analysis?.top_keywords || [];
+    
+    container.innerHTML = '';
+    keywords.forEach(kw => {
+        const span = document.createElement('span');
+        span.className = 'px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm';
+        span.textContent = `${kw.word} (${kw.count})`;
+        container.appendChild(span);
+    });
+}
+
+// 更新平均评分
+function updateAvgRating(data) {
+    const rating = data.sentiment_summary?.average_rating || 0;
+    document.querySelector('#avg-rating p').textContent = rating.toFixed(1);
+}
+</script>
+{% endblock %}
