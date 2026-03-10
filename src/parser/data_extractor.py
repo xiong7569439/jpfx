@@ -195,7 +195,7 @@ class DataExtractor:
         elif 'ldshop.gg' in url:
             sku_prices = self._extract_ldshop_skus(soup)
         elif 'topuplive.com' in url:
-            sku_prices = self._extract_topuplive_skus(soup)
+            sku_prices = self._extract_topuplive_skus(soup, text)
         else:
             # 通用提取逻辑
             sku_prices = self._extract_generic_skus(soup, text)
@@ -257,13 +257,125 @@ class DataExtractor:
         """提取LDShop网站的SKU价格"""
         sku_prices = []
         
-        # LDShop常见的价格卡片结构
-        # 尝试多种可能的选择器
+        # LDShop使用 card-wrapper 作为商品卡片容器
+        # 从HTML结构看：
+        # - 商品名在 <p class="line-clamp-2..."> 中
+        # - 价格在 <span> 中，格式如 "S$ 96.70"
+        # - 折扣信息在另一个 <span> 中
+        
+        # 首先尝试 card-wrapper 选择器
+        card_wrappers = soup.find_all('div', class_=lambda c: c and 'card-wrapper' in c)
+        
+        for card in card_wrappers:
+            try:
+                # 提取SKU名称 - 在 line-clamp-2 类的 p 标签中
+                name = ''
+                name_elem = card.find('p', class_=lambda c: c and 'line-clamp-2' in c)
+                if name_elem:
+                    name = name_elem.get_text(strip=True)
+                
+                # 如果没找到，尝试其他选择器
+                if not name:
+                    for name_selector in ['.product-name', '.item-name', 'h3', 'h4', '.title', '[class*="name"]']:
+                        name_elem = card.select_one(name_selector)
+                        if name_elem:
+                            name = name_elem.get_text(strip=True)
+                            break
+                
+                # 提取价格 - 在 bottom-wrapper 内的第一个价格
+                price = None
+                price_text = ''
+                
+                # 查找 bottom-wrapper
+                bottom_wrapper = card.find('div', class_=lambda c: c and 'bottom-wrapper' in c)
+                if bottom_wrapper:
+                    # 在 bottom-wrapper 内查找价格
+                    price_span = bottom_wrapper.find('span')
+                    if price_span:
+                        price_text = price_span.get_text(strip=True)
+                        # 匹配价格格式：S$ 96.70 或 $ 96.70
+                        price_match = re.search(r'[\$S\$]\s*([\d,]+\.?\d*)', price_text)
+                        if price_match:
+                            price = price_match.group(1).replace(',', '')
+                
+                # 如果没找到，尝试其他选择器
+                if not price:
+                    for price_selector in ['.price', '.current-price', '[class*="price"]', '.amount']:
+                        price_elem = card.select_one(price_selector)
+                        if price_elem:
+                            price_text = price_elem.get_text(strip=True)
+                            price_match = re.search(r'[\d,]+\.?\d*', price_text)
+                            if price_match:
+                                price = price_match.group(0).replace(',', '')
+                                break
+                
+                if name and price:
+                    sku_prices.append({
+                        'sku_name': name,
+                        'price': price,
+                        'currency': self._detect_currency(price_text) if price_text else 'USD',
+                        'sku_id': self._generate_sku_id(name)
+                    })
+            except Exception:
+                continue
+        
+        # 如果没找到任何SKU，尝试其他选择器作为备选
+        if not sku_prices:
+            selectors = [
+                '.product-item',
+                '.price-card',
+                '[class*="product"]',
+                '[class*="item"]'
+            ]
+            
+            for selector in selectors:
+                items = soup.select(selector)
+                for item in items:
+                    try:
+                        name = ''
+                        for name_selector in ['.product-name', '.item-name', 'h3', 'h4', '.title']:
+                            name_elem = item.select_one(name_selector)
+                            if name_elem:
+                                name = name_elem.get_text(strip=True)
+                                break
+                        
+                        price = None
+                        price_text = ''
+                        for price_selector in ['.price', '.current-price', '[class*="price"]', '.amount']:
+                            price_elem = item.select_one(price_selector)
+                            if price_elem:
+                                price_text = price_elem.get_text(strip=True)
+                                price_match = re.search(r'[\d,]+\.?\d*', price_text)
+                                if price_match:
+                                    price = price_match.group(0).replace(',', '')
+                                    break
+                        
+                        if name and price:
+                            sku_prices.append({
+                                'sku_name': name,
+                                'price': price,
+                                'currency': self._detect_currency(price_text) if price_text else 'USD',
+                                'sku_id': self._generate_sku_id(name)
+                            })
+                    except Exception:
+                        continue
+        
+        return sku_prices
+        
+    def _extract_topuplive_skus(self, soup: BeautifulSoup, text: str = '') -> List[Dict[str, Any]]:
+        """提取TOPUPlive网站的SKU价格"""
+        sku_prices = []
+        
+        # 策略1: 尝试从页面中的价格卡片结构提取
         selectors = [
-            '.product-item',
-            '.price-card',
+            '.product-card',
+            '.price-item',
+            '[class*="package"]',
+            '[class*="sku"]',
             '[class*="product"]',
-            '[class*="item"]'
+            '[class*="item"]',
+            '.game-item',
+            '.top-up-item',
         ]
         
         for selector in selectors:
@@ -272,7 +384,7 @@ class DataExtractor:
                 try:
                     # 尝试提取名称
                     name = ''
-                    for name_selector in ['.product-name', '.item-name', 'h3', 'h4', '.title']:
+                    for name_selector in ['.package-name', '.product-title', 'h3', 'h4', '.name', '[class*="title"]', '[class*="name"]']:
                         name_elem = item.select_one(name_selector)
                         if name_elem:
                             name = name_elem.get_text(strip=True)
@@ -280,8 +392,8 @@ class DataExtractor:
                     
                     # 尝试提取价格
                     price = None
-                    price_text = ''  # 修改：初始化变量，避免未定义风险
-                    for price_selector in ['.price', '.current-price', '[class*="price"]', '.amount']:
+                    price_text = ''
+                    for price_selector in ['.price', '.current-price', '.sale-price', '[class*="price"]', '[class*="amount"]']:
                         price_elem = item.select_one(price_selector)
                         if price_elem:
                             price_text = price_elem.get_text(strip=True)
@@ -300,54 +412,73 @@ class DataExtractor:
                 except Exception:
                     continue
         
-        return sku_prices
-        
-    def _extract_topuplive_skus(self, soup: BeautifulSoup) -> List[Dict[str, Any]]:
-        """提取TOPUPlive网站的SKU价格"""
-        sku_prices = []
-        
-        # TOPUPlive常见的价格卡片结构
-        selectors = [
-            '.product-card',
-            '.price-item',
-            '[class*="package"]',
-            '[class*="sku"]'
-        ]
-        
-        for selector in selectors:
-            items = soup.select(selector)
-            for item in items:
+        # 策略2: 从页面文本中提取 SKU 名称 + 价格模式
+        # TOPUPlive 常见模式：
+        # - "60 Genesis Crystals\nS$\n1.12\n1.27" (多行格式)
+        # - "60 Genesis Crystals - $0.99" (单行格式)
+        if not sku_prices or len(sku_prices) < 3:
+            # 多行模式：SKU名称 + S$ + 价格 + 原价
+            # 例如：
+            # 60 Genesis Crystals
+            # S$
+            # 1.12
+            # 1.27
+            multiline_pattern = r'([\w\s\-\*\+]+(?:Crystals?|Crystal|UC|Diamonds?|Gems?|Coins?|Tokens?|Points?|Golds?|Moon|Bundle)[\w\s\-\*\+]*?)\nS\$\s*\n?([\d,]+\.?\d*)'
+            
+            matches = re.finditer(multiline_pattern, text, re.IGNORECASE | re.MULTILINE)
+            for match in matches:
                 try:
-                    # 尝试提取名称
-                    name = ''
-                    for name_selector in ['.package-name', '.product-title', 'h3', 'h4', '.name']:
-                        name_elem = item.select_one(name_selector)
-                        if name_elem:
-                            name = name_elem.get_text(strip=True)
-                            break
-                    
-                    # 尝试提取价格
-                    price = None
-                    for price_selector in ['.price', '.current-price', '.sale-price', '[class*="price"]']:
-                        price_elem = item.select_one(price_selector)
-                        if price_elem:
-                            price_text = price_elem.get_text(strip=True)
-                            price_match = re.search(r'[\d,]+\.?\d*', price_text)
-                            if price_match:
-                                price = price_match.group(0).replace(',', '')
-                                break
-                    
-                    if name and price:
+                    sku_name = match.group(1).strip()
+                    price = match.group(2).replace(',', '')
+                    # 过滤掉过短或无效的名称
+                    if len(sku_name) > 3 and float(price) > 0 and 'S$' not in sku_name:
                         sku_prices.append({
-                            'sku_name': name,
+                            'sku_name': sku_name,
                             'price': price,
-                            'currency': self._detect_currency(price_text) if 'price_text' in locals() else 'USD',
-                            'sku_id': self._generate_sku_id(name)
+                            'currency': 'SGD',
+                            'sku_id': self._generate_sku_id(sku_name)
                         })
-                except Exception:
+                except (ValueError, IndexError):
                     continue
+            
+            # 单行模式匹配
+            if len(sku_prices) < 3:
+                patterns = [
+                    # 匹配 "数量 单位/商品名 价格" 格式
+                    r'(\d+(?:\s*\+\s*\d+)?\s*(?:Genesis Crystals?|UC|diamonds?|gems?|coins?|tokens?|points?|golds?)[^\n\$]{0,50})\s*[-:]?\s*\$\s*([\d,]+\.?\d*)',
+                    # 匹配 "数量+数量 单位" 格式（如 6480+1600）
+                    r'(\d+\s*\+\s*\d+\s*[^\n\$]{0,50})\s*[-:]?\s*\$\s*([\d,]+\.?\d*)',
+                    # 匹配通用商品名 + 价格
+                    r'((?:\d+\s+)?(?:Crystal|Shard|Diamond|Gem|Coin|Token)[^\n\$]{0,30})\s*[-:]?\s*\$\s*([\d,]+\.?\d*)',
+                ]
+                
+                for pattern in patterns:
+                    matches = re.finditer(pattern, text, re.IGNORECASE)
+                    for match in matches:
+                        try:
+                            sku_name = match.group(1).strip()
+                            price = match.group(2).replace(',', '')
+                            # 过滤掉过短的名称
+                            if len(sku_name) > 3 and float(price) > 0:
+                                sku_prices.append({
+                                    'sku_name': sku_name,
+                                    'price': price,
+                                    'currency': 'USD',
+                                    'sku_id': self._generate_sku_id(sku_name)
+                                })
+                        except (ValueError, IndexError):
+                            continue
         
-        return sku_prices
+        # 去重
+        seen = set()
+        unique_prices = []
+        for p in sku_prices:
+            key = f"{p['sku_id']}_{p['price']}"
+            if key not in seen:
+                seen.add(key)
+                unique_prices.append(p)
+        
+        return unique_prices
         
     def _extract_generic_skus(self, soup: BeautifulSoup, text: str) -> List[Dict[str, Any]]:
         """通用SKU提取逻辑"""
@@ -1276,44 +1407,68 @@ class DataExtractor:
         return tags
 
     def _extract_ldshop_discount_tags(self, soup: BeautifulSoup) -> List[Dict[str, Any]]:
-        """LDShop SKU级折打标签"""
+        """LDShop SKU级折扣标签"""
         tags = []
-        # LDShop常见的价格卡片结构
-        for item in soup.select('[class*="product-item"], [class*="package"], [class*="good-item"]'):
+        # LDShop使用 card-wrapper 作为商品卡片容器
+        for card in soup.find_all('div', class_=lambda c: c and 'card-wrapper' in c):
             try:
-                # 名称
+                # 名称 - 在 line-clamp-2 类的 p 标签中
                 name = ''
-                for sel in ['[class*="name"]', '[class*="title"]', 'h3', 'h4']:
-                    elem = item.select_one(sel)
-                    if elem:
-                        name = elem.get_text(strip=True)
-                        break
-
-                # 折扣标签
-                tag_text = ''
-                for sel in ['[class*="off"]', '[class*="discount"]', '[class*="tag"]', '[class*="badge"]']:
-                    elem = item.select_one(sel)
-                    if elem:
-                        tag_text = elem.get_text(strip=True)
-                        if '%' in tag_text or 'off' in tag_text.lower():
+                name_elem = card.find('p', class_=lambda c: c and 'line-clamp-2' in c)
+                if name_elem:
+                    name = name_elem.get_text(strip=True)
+                    
+                # 如果没找到，尝试其他选择器
+                if not name:
+                    for sel in ['[class*="name"]', '[class*="title"]', 'h3', 'h4']:
+                        elem = card.select_one(sel)
+                        if elem:
+                            name = elem.get_text(strip=True)
                             break
-
+    
+                # 折扣标签 - 在 c-#FD8E12 类的 span 中
+                tag_text = ''
+                discount_span = card.find('span', class_=lambda c: c and 'c-#FD8E12' in c and 'font-700' in c)
+                if discount_span:
+                    tag_text = discount_span.get_text(strip=True)
+    
                 # 计算折扣百分比
                 orig_price = ''
                 sale_price = ''
-                for p_sel in ['[class*="original"]', '[class*="del"]', 's', 'del']:
-                    e = item.select_one(p_sel)
-                    if e:
-                        m = re.search(r'[\d,]+\.?\d*', e.get_text())
-                        orig_price = m.group(0).replace(',', '') if m else ''
-                        break
-                for p_sel in ['[class*="current"]', '[class*="sale"]', '[class*="price"]']:
-                    e = item.select_one(p_sel)
-                    if e:
-                        m = re.search(r'[\d,]+\.?\d*', e.get_text())
-                        sale_price = m.group(0).replace(',', '') if m else ''
-                        break
-
+                    
+                # 在 bottom-wrapper 内查找价格
+                bottom_wrapper = card.find('div', class_=lambda c: c and 'bottom-wrapper' in c)
+                if bottom_wrapper:
+                    # 查找所有价格相关的 span
+                    spans = bottom_wrapper.find_all('span')
+                    for span in spans:
+                        span_text = span.get_text(strip=True)
+                        # 检查是否是划线价格（原价）
+                        if 'line-through' in str(span.get('class', [])) or span_text.startswith('S$'):
+                            m = re.search(r'[\$S\$]\s*([\d,]+\.?\d*)', span_text)
+                            if m:
+                                if 'line-through' in str(span.get('class', [])):
+                                    orig_price = m.group(1).replace(',', '')
+                                else:
+                                    sale_price = m.group(1).replace(',', '')
+                    
+                # 如果没找到，尝试其他选择器
+                if not orig_price:
+                    for p_sel in ['[class*="original"]', '[class*="del"]', 's', 'del', '.line-through']:
+                        e = card.select_one(p_sel)
+                        if e:
+                            m = re.search(r'[\d,]+\.?\d*', e.get_text())
+                            orig_price = m.group(0).replace(',', '') if m else ''
+                            break
+                    
+                if not sale_price:
+                    for p_sel in ['[class*="current"]', '[class*="sale"]', '[class*="price"]']:
+                        e = card.select_one(p_sel)
+                        if e:
+                            m = re.search(r'[\d,]+\.?\d*', e.get_text())
+                            sale_price = m.group(0).replace(',', '') if m else ''
+                            break
+    
                 if name and (tag_text or orig_price):
                     tags.append({
                         'sku_name': name,

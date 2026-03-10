@@ -279,19 +279,28 @@ class DiffEngine:
             matched_old = set()
             matched_new = set()
             
+            # 获取游戏名称用于描述
+            game_name = new_data.get('game', '')
+            
             # 1. 尝试匹配相似价格（变化幅度小于5%认为是同一产品的价格调整）
             for i, new_price in enumerate(new_prices_list):
+                # 跳过空值的价格
+                if not new_price.get('value') or new_price['value'].strip() == '':
+                    continue
                 new_val = float(new_price['value'])
                 for j, old_price in enumerate(old_prices_list):
                     if j in matched_old:
+                        continue
+                    # 跳过空值的旧价格
+                    if not old_price.get('value') or old_price['value'].strip() == '':
                         continue
                     old_val = float(old_price['value'])
                     
                     # 计算变化幅度
                     if old_val > 0:
-                        change_pct = abs(new_val - old_val) / old_val
+                        change_pct_val = abs(new_val - old_val) / old_val
                         # 如果变化小于5%，认为是同一产品的价格调整
-                        if change_pct < 0.05:
+                        if change_pct_val < 0.05:
                             matched_old.add(j)
                             matched_new.add(i)
                             
@@ -308,6 +317,8 @@ class DiffEngine:
                                 # 构建价格变动描述
                                 if sku_name:
                                     description = f"{sku_name} 价格{direction}: {old_price['raw']} → {new_price['raw']} ({change_pct:+.1f}%)"
+                                elif game_name:
+                                    description = f"{game_name} 价格{direction}: {old_price['raw']} → {new_price['raw']} ({change_pct:+.1f}%)"
                                 else:
                                     description = f"价格{direction}: {old_price['raw']} → {new_price['raw']} ({change_pct:+.1f}%)"
                                 
@@ -317,7 +328,7 @@ class DiffEngine:
                                     'value': new_price,
                                     'old_value': old_price,
                                     'description': description,
-                                    'sku_name': sku_name
+                                    'sku_name': sku_name or game_name
                                 })
                             break
             
@@ -331,6 +342,8 @@ class DiffEngine:
                     
                     if sku_name:
                         description = f"新增SKU {sku_name}: {price['raw']}"
+                    elif game_name:
+                        description = f"{game_name} 新增价格: {price['raw']}"
                     else:
                         description = f"新增价格: {price['raw']}"
                     
@@ -339,7 +352,7 @@ class DiffEngine:
                         'type': 'add',
                         'value': price,
                         'description': description,
-                        'sku_name': sku_name
+                        'sku_name': sku_name or game_name
                     })
                     
             # 3. 真正移除的价格（未匹配到任何新价格）
@@ -347,6 +360,7 @@ class DiffEngine:
                 if j not in matched_old:
                     # 尝试从旧数据的上下文中查找SKU名称
                     old_sku_name = ''
+                    old_game_name = old_data.get('game', '')
                     for discount in old_data.get('discounts', []):
                         context = discount.get('context', '')
                         product_name = discount.get('product_name', '')
@@ -356,6 +370,8 @@ class DiffEngine:
                     
                     if old_sku_name:
                         description = f"移除SKU {old_sku_name}: {price['raw']}"
+                    elif old_game_name:
+                        description = f"{old_game_name} 移除价格: {price['raw']}"
                     else:
                         description = f"移除价格: {price['raw']}"
                     
@@ -364,12 +380,15 @@ class DiffEngine:
                         'type': 'remove',
                         'value': price,
                         'description': description,
-                        'sku_name': old_sku_name
+                        'sku_name': old_sku_name or old_game_name
                     })
                 
         # 对比折扣（带SKU名称关联）
         old_discounts = {d.get('raw', ''): d for d in old_data.get('discounts', []) if d.get('raw')}
         new_discounts = {d.get('raw', ''): d for d in new_data.get('discounts', []) if d.get('raw')}
+        
+        # 获取游戏名称用于描述
+        game_name = new_data.get('game', '')
         
         added_discount_keys = set(new_discounts.keys()) - set(old_discounts.keys())
         for key in added_discount_keys:
@@ -377,8 +396,11 @@ class DiffEngine:
                 discount_data = new_discounts[key]
                 product_name = discount_data.get('product_name', '') or discount_data.get('sku_name', '')
                 
+                # 构建描述：优先使用产品名，其次使用游戏名，最后只显示折扣
                 if product_name:
                     description = f"{product_name} 新增折扣: {key}"
+                elif game_name:
+                    description = f"{game_name} 新增折扣: {key}"
                 else:
                     description = f"新增折扣: {key}"
                 
