@@ -231,7 +231,7 @@ class PageOperator:
     
     def _is_spa_url(self, url: str) -> bool:
         """检测URL是否为SPA网站"""
-        spa_domains = ['lootbar.gg', 'ldshop.gg', 'topuplive.com']
+        spa_domains = ['lootbar.gg', 'ldshop.gg']
         return any(domain in url.lower() for domain in spa_domains)
     
     async def _goto_standard(self, url: str, wait_for: Optional[str] = None) -> bool:
@@ -263,22 +263,6 @@ class PageOperator:
         """SPA页面加载（等待JS渲染）"""
         logger.info(f"使用SPA模式加载: {url}")
         
-        # 针对 TOPUPlive 的特殊处理：添加随机延迟和额外请求头
-        if 'topuplive.com' in url:
-            # 随机延迟，模拟人类行为
-            await asyncio.sleep(random.uniform(1, 3))
-            # 设置额外的请求头
-            await self.page.set_extra_http_headers({
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                'Accept-Language': 'en-US,en;q=0.9',
-                'Cache-Control': 'max-age=0',
-                'Sec-Fetch-Dest': 'document',
-                'Sec-Fetch-Mode': 'navigate',
-                'Sec-Fetch-Site': 'none',
-                'Sec-Fetch-User': '?1',
-                'Upgrade-Insecure-Requests': '1',
-            })
-        
         # 先加载基础页面
         response = await self.page.goto(
             url,
@@ -287,22 +271,8 @@ class PageOperator:
         )
         
         if response and response.status >= 400:
-            # 对于 403 错误，尝试重试
-            if response.status == 403 and 'topuplive.com' in url:
-                logger.warning(f"TOPUPlive 返回 403，尝试重试: {url}")
-                await asyncio.sleep(random.uniform(2, 4))
-                # 重新加载页面
-                response = await self.page.goto(
-                    url,
-                    wait_until='domcontentloaded',
-                    timeout=self.crawler_config.get('page_load_timeout', 30000)
-                )
-                if response and response.status >= 400:
-                    logger.warning(f"重试后页面仍返回错误状态码: {response.status}, URL: {url}")
-                    return False
-            else:
-                logger.warning(f"页面返回错误状态码: {response.status}, URL: {url}")
-                return False
+            logger.warning(f"页面返回错误状态码: {response.status}, URL: {url}")
+            return False
         
         # 等待网络空闲（SPA加载的关键指标）
         try:
@@ -362,93 +332,12 @@ class PageOperator:
         在每次 goto 完成后调用，三站点各自处理。
         """
         try:
-            if 'topuplive.com' in url:
-                await self._topuplive_set_usd()
-            elif 'ldshop.gg' in url:
+            if 'ldshop.gg' in url:
                 await self._ldshop_set_usd()
             elif 'lootbar.gg' in url:
                 await self._lootbar_set_usd()
         except Exception as e:
             logger.debug(f"自动设置语言/货币跳过: {url}, {e}")
-
-    async def _topuplive_set_usd(self):
-        """
-        TOPUPlive: 将导航栏 Language/Currency 切换为 English / USD。
-        选择器策略：点击语言货币切换按钮 → 找到 USD 选项并点击。
-        """
-        try:
-            # 先检查当前是否已经是 USD
-            page_text = await self.page.evaluate("() => document.body.innerText.slice(0, 500)")
-            if 'USD' in page_text and 'HKD' not in page_text[:100]:
-                logger.debug("TOPUPlive 已是 USD，跳过切换")
-                return
-
-            # 定位货币/语言切换入口（通常在导航栏右上角）
-            trigger_selectors = [
-                "[class*='currency']",
-                "[class*='lang']",
-                # TOPUPlive 导航栏右上角的货币显示元素
-                "nav [class*='select']",
-                "header [class*='select']",
-                # 通过文字匹配
-                "text=HKD",
-                "text=English",
-            ]
-            clicked = False
-            for sel in trigger_selectors:
-                try:
-                    elem = await self.page.query_selector(sel)
-                    if elem and await elem.is_visible():
-                        text = (await elem.inner_text()).strip()
-                        # 只点击包含货币信息的元素
-                        if any(c in text for c in ['HKD', 'SGD', 'USD', 'English', 'Currency']):
-                            await elem.click()
-                            await asyncio.sleep(0.8)
-                            clicked = True
-                            break
-                except Exception:
-                    continue
-
-            if not clicked:
-                # 尝试用 JavaScript 强制触发
-                await self.page.evaluate("""
-                    () => {
-                        const els = document.querySelectorAll('*');
-                        for (const el of els) {
-                            const t = (el.innerText || '').trim();
-                            if ((t === 'HKD' || t.includes('HKD') || t.includes('English')) &&
-                                el.children.length < 3) {
-                                el.click();
-                                break;
-                            }
-                        }
-                    }
-                """)
-                await asyncio.sleep(0.8)
-
-            # 寻找 USD 选项并点击
-            usd_selectors = [
-                "text=USD",
-                "[class*='option']:has-text('USD')",
-                "li:has-text('USD')",
-                "[data-value='USD']",
-                "[value='USD']",
-                "[class*='item']:has-text('USD')",
-            ]
-            for sel in usd_selectors:
-                try:
-                    option = await self.page.query_selector(sel)
-                    if option and await option.is_visible():
-                        await option.click()
-                        await asyncio.sleep(1)
-                        logger.info("TOPUPlive 已切换为 USD")
-                        return
-                except Exception:
-                    continue
-
-            logger.debug("TOPUPlive USD 选项未找到，保持当前货币")
-        except Exception as e:
-            logger.debug(f"TOPUPlive 切换 USD 失败: {e}")
 
     async def _ldshop_set_usd(self):
         """
@@ -1062,7 +951,7 @@ class PageOperator:
         - Recommended
         
         Args:
-            site_name: 站点名称 (LootBar, LDShop, TOPUPlive)
+            site_name: 站点名称 (LootBar, LDShop)
             base_url: 站点基础URL
             max_items: 最大发现商品数量
             
@@ -1080,8 +969,6 @@ class PageOperator:
                 discovered = await self._discover_lootbar_hot_products(max_items)
             elif 'ldshop.gg' in base_url:
                 discovered = await self._discover_ldshop_hot_products(max_items)
-            elif 'topuplive.com' in base_url:
-                discovered = await self._discover_topuplive_hot_products(max_items)
             else:
                 # 通用发现策略
                 discovered = await self._discover_generic_hot_products(max_items)
@@ -1277,77 +1164,6 @@ class PageOperator:
                         
         except Exception as e:
             logger.debug(f"LDShop热门商品发现失败: {e}")
-        
-        return self._deduplicate_products(products[:max_items])
-    
-    async def _discover_topuplive_hot_products(self, max_items: int) -> List[Dict[str, str]]:
-        """发现TOPUPlive首页热门商品"""
-        products = []
-        
-        hot_section_keywords = [
-            'hot', 'trending', 'popular', 'best seller', 'featured',
-            'recommended', 'top games', '热门'
-        ]
-        
-        try:
-            sections = await self.page.query_selector_all(
-                "h2, h3, [class*='title'], [class*='heading']"
-            )
-            
-            for section in sections:
-                try:
-                    section_text = (await section.inner_text()).strip().lower()
-                    
-                    if any(kw in section_text for kw in hot_section_keywords):
-                        parent = await section.evaluate_handle(
-                            "el => el.closest('[class*=\"section\"], [class*=\"module\"], section, div')"
-                        )
-                        
-                        if parent:
-                            # TOPUPlive使用特定的游戏链接模式
-                            links = await parent.query_selector_all(
-                                "a[href*='topuplive.com/']"
-                            )
-                            
-                            for link in links[:max_items]:
-                                try:
-                                    href = await link.get_attribute('href')
-                                    name = await self._extract_product_name_from_element(link)
-                                    
-                                    if href and name:
-                                        products.append({
-                                            'name': name,
-                                            'url': href,
-                                            'source': f"热门区域: {section_text[:30]}"
-                                        })
-                                except Exception:
-                                    continue
-                                    
-                        if len(products) >= max_items:
-                            break
-                            
-                except Exception:
-                    continue
-            
-            # 备用策略：查找所有游戏链接
-            if not products:
-                links = await self.page.query_selector_all("a[href*='/top-up/']")
-                for link in links[:max_items]:
-                    try:
-                        href = await link.get_attribute('href')
-                        name = await self._extract_product_name_from_element(link)
-                        
-                        if href and name:
-                            products.append({
-                                'name': name,
-                                'url': href,
-                                'source': '游戏链接区域'
-                            })
-                    except Exception:
-                        continue
-                        
-        except Exception as e:
-            logger.debug(f"TOPUPlive热门商品发现失败: {e}")
         
         return self._deduplicate_products(products[:max_items])
     

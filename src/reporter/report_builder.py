@@ -32,18 +32,7 @@ class ReportBuilder:
                      checkout_analysis: Dict[str, Any] = None,
                      payment_analysis: Dict[str, Any] = None) -> str:
         """
-        构建日报
-        
-        Args:
-            date_str: 日期字符串
-            crawl_results: 抓取结果
-            changes: 变化列表
-            tldr: 要点摘要
-            weak_signals: 弱信号列表
-            todos: 待办事项
-            
-        Returns:
-            Markdown格式的报告
+        构建日报（优化版：总-分结构，表格化展示）
         """
         lines = []
         
@@ -51,515 +40,469 @@ class ReportBuilder:
         lines.append(f"# 竞品策略变动日报（{date_str}）")
         lines.append("")
         
-        # TL;DR
-        lines.append("## TL;DR（3-6条，按影响排序）")
+        # ========== 第一部分：核心洞察（总） ==========
+        lines.append("## 核心洞察")
+        lines.append("")
+        
+        # TL;DR - 精简版，去掉维度标签
         if tldr:
-            for item in tldr:
+            for item in tldr[:6]:  # 最多6条
                 level = item.get('level', '中')
                 site = item.get('site', '')
                 desc = item.get('description', '')
-                dims = ', '.join(item.get('dimensions', []))
-                lines.append(f"- [{level}] {site} | {desc} ({dims})")
+                # 截断过长的描述
+                if len(desc) > 80:
+                    desc = desc[:77] + "..."
+                lines.append(f"- **[{level}]** {site}｜{desc}")
         else:
             lines.append("- 今日未发现显著策略变化")
         lines.append("")
         
-        # 今日关键变化
-        lines.append("## 1. 今日关键变化（按影响排序）")
+        # 快速数据看板
+        lines.append("### 今日数据概览")
+        lines.append("")
         
+        # 统计关键指标
+        total_changes = len(changes) if changes else 0
+        high_impact = len([c for c in (changes or []) if c.get('impact_level') == 'high'])
+        price_changes = len([c for c in (changes or []) if 'A' in c.get('dimensions', [])])
+        promo_changes = len([c for c in (changes or []) if 'B' in c.get('dimensions', [])])
+        
+        lines.append(f"| 指标 | 数值 |")
+        lines.append(f"|------|------|")
+        lines.append(f"| 总变化数 | {total_changes} |")
+        lines.append(f"| 高影响变化 | {high_impact} |")
+        lines.append(f"| 价格/定价相关 | {price_changes} |")
+        lines.append(f"| 促销相关 | {promo_changes} |")
+        if new_games:
+            lines.append(f"| 新增游戏 | {len(new_games)} |")
+        lines.append("")
+        
+        # ========== 第二部分：详细变化（分） ==========
         if changes:
-            # 按影响级别分组
-            high_changes = [c for c in changes if c.get('impact_level') == 'high']
-            medium_changes = [c for c in changes if c.get('impact_level') == 'medium']
-            low_changes = [c for c in changes if c.get('impact_level') == 'low']
+            lines.append("## 详细变化分析")
+            lines.append("")
+            
+            # 合并相同URL的变化，避免重复
+            merged_changes = self._merge_changes_by_url(changes)
+            
+            # 按影响级别分组展示
+            high_changes = [c for c in merged_changes if c.get('impact_level') == 'high']
+            medium_changes = [c for c in merged_changes if c.get('impact_level') == 'medium']
+            low_changes = [c for c in merged_changes if c.get('impact_level') == 'low']
             
             change_idx = 1
             
-            # 高影响变化
-            for change in high_changes:
-                self._append_change_detail(lines, change_idx, change)
-                change_idx += 1
-                
-            # 中影响变化
-            for change in medium_changes:
-                self._append_change_detail(lines, change_idx, change)
-                change_idx += 1
-                
-            # 低影响变化
-            for change in low_changes:
-                self._append_change_detail(lines, change_idx, change)
-                change_idx += 1
+            if high_changes:
+                lines.append(f"### 高影响变化 ({len(high_changes)}条)")
+                lines.append("")
+                for change in high_changes:
+                    self._append_change_detail_compact(lines, change_idx, change)
+                    change_idx += 1
+            
+            if medium_changes:
+                lines.append(f"### 中影响变化 ({len(medium_changes)}条)")
+                lines.append("")
+                for change in medium_changes:
+                    self._append_change_detail_compact(lines, change_idx, change)
+                    change_idx += 1
+                    
+            # 低影响变化折叠展示
+            if low_changes:
+                lines.append(f"<details>")
+                lines.append(f"<summary>低影响变化 ({len(low_changes)}条) - 点击展开</summary>")
+                lines.append("")
+                for change in low_changes:
+                    self._append_change_detail_compact(lines, change_idx, change)
+                    change_idx += 1
+                lines.append(f"</details>")
+                lines.append("")
         else:
             lines.append("今日未发现关键变化。")
+            lines.append("")
+        
+        # ========== 第三部分：10个核心数据看板 ==========
+        lines.append("## 10个核心数据看板")
+        lines.append("")
+        lines.append("*聚焦：发现差距 & 马上提效*")
         lines.append("")
         
-        # 新增维度：竞品间价格对比（P0）
-        lines.append("## 2. 竞品间价格对比（P0）")
+        # A. 商品与价格（最能快速拉开差距）
+        lines.append("### A. 商品与价格 💰")
+        lines.append("")
+        
+        # A1. Top SKU同款价格差（Price Gap）
         if price_comparisons:
-            for comp in price_comparisons:
-                game = comp.get('game', '')
+            lines.append("**A1. Top SKU同款价格差**")
+            lines.append("")
+            lines.append(f"| SKU | 最低价站点 | 到手价 | 最高价站点 | 到手价 | 价差 | 动作建议 |")
+            lines.append(f"|-----|-----------|--------|-----------|--------|------|----------|")
+            for comp in price_comparisons[:10]:  # 最多10条
+                game = comp.get('game', '')[:20]
                 cheapest_site = comp.get('cheapest_site', '')
                 cheapest_price = comp.get('cheapest_price', '')
                 expensive_site = comp.get('most_expensive_site', '')
                 expensive_price = comp.get('most_expensive_price', '')
                 diff_pct = comp.get('price_diff_pct', 0)
-                lines.append(f"- **{game}**: {cheapest_site} ({cheapest_price}) 比 {expensive_site} ({expensive_price}) 低 **{diff_pct}%**")
-        else:
-            lines.append("- 今日价格数据不足，无法对比")
+                # 动作建议
+                if diff_pct >= 1.5:
+                    action = "⚠️ 评估降价/改返利"
+                elif diff_pct >= 0.5:
+                    action = "📊 持续监测"
+                else:
+                    action = "✅ 价格正常"
+                lines.append(f"| {game} | {cheapest_site} | {cheapest_price} | {expensive_site} | {expensive_price} | {diff_pct}% | {action} |")
+            lines.append("")
+        
+        # A2. 同款库存/可售状态（Availability）
+        sku_changes = self._extract_sku_changes(changes)
+        availability_changes = [s for s in sku_changes if s['type'] in ['add', 'remove']]
+        if availability_changes:
+            lines.append("**A2. SKU库存/可售状态变化**")
+            lines.append("")
+            lines.append(f"| 站点 | SKU | 变动 | 动作建议 |")
+            lines.append(f"|------|-----|------|----------|")
+            for sku in availability_changes[:8]:
+                site = sku.get('site', '')
+                name = sku.get('sku_name', '')[:25]
+                change_type = "🔴 下架" if sku['type'] == 'remove' else "🟢 新增"
+                action = "排查供应链" if sku['type'] == 'remove' else "关注竞品策略"
+                lines.append(f"| {site} | {name} | {change_type} | {action} |")
+            lines.append("")
+        
+        # A3. 价格结构变化（Pricing Event）
+        price_structure_changes = [s for s in sku_changes if s['type'] == 'change' and abs(s.get('change_pct', 0)) >= 3]
+        if price_structure_changes:
+            lines.append("**A3. 价格结构变化（批量调价≥3%）**")
+            lines.append("")
+            lines.append(f"| 站点 | SKU | 原价 | 现价 | 幅度 | 可能原因 |")
+            lines.append(f"|------|-----|------|------|------|----------|")
+            for sku in price_structure_changes[:8]:
+                site = sku.get('site', '')
+                name = sku.get('sku_name', '')[:20]
+                old_p = f"{sku.get('currency', 'USD')}${sku.get('old_price', '')}"
+                new_p = f"{sku.get('currency', 'USD')}${sku.get('price', '')}"
+                change_pct = sku.get('change_pct', 0)
+                reason = "促销战" if change_pct < -5 else "成本变化" if change_pct < 0 else "提价"
+                icon = "📉" if change_pct < 0 else "📈"
+                lines.append(f"| {site} | {name} | {old_p} | {new_p} | {icon} {change_pct:+.1f}% | {reason} |")
+            lines.append("")
+        
+        # B. 促销与转化驱动（最快能学、能抄、能超）
+        lines.append("### B. 促销与转化驱动 🚀")
         lines.append("")
         
-        # 新增：价格趋势分析
-        lines.append("## 2.1 价格趋势分析（7日）")
-        if price_trends and price_trends.get('game_trends'):
-            # 竞争力评分概览
-            lines.append("### 竞争力评分")
-            for game_name, comp in price_trends.get('competitiveness', {}).items():
-                score = comp.get('competitiveness_score', 0)
-                rank = comp.get('topuplive_position', '-')
-                gap_cheapest = comp.get('price_gap_to_cheapest', 0)
-                
-                score_emoji = "🟢" if score >= 80 else "🟡" if score >= 50 else "🔴"
-                lines.append(f"- {score_emoji} **{game_name}**: 竞争力评分 {score}/100 | 排名 {rank}/3 | 与最低价差距 ${gap_cheapest}")
-            
-            lines.append("")
-            
-            # 价格趋势详情
-            lines.append("### 各游戏价格趋势")
-            for game_name, trend in price_trends.get('game_trends', {}).items():
-                lines.append(f"**{game_name}**:")
-                for site_name, site_data in trend.get('site_trends', {}).items():
-                    direction = site_data.get('trend_direction', 'stable')
-                    change_pct = site_data.get('price_change_pct', 0)
-                    volatility = site_data.get('volatility', 0)
-                    
-                    direction_icon = "📈" if direction == 'up' else "📉" if direction == 'down' else "➡️"
-                    lines.append(f"  - {site_name}: {direction_icon} {change_pct:+.1f}% (波动率: {volatility}%)")
-            lines.append("")
-            
-            # 异常波动预警
-            anomalies = price_trends.get('anomalies', [])
-            if anomalies:
-                lines.append("### ⚠️ 价格异常波动预警")
-                for anomaly in anomalies[:5]:  # 最多显示5条
-                    game = anomaly.get('game', '')
-                    site = anomaly.get('site', '')
-                    deviation = anomaly.get('deviation_pct', 0)
-                    severity = anomaly.get('severity', 'medium')
-                    icon = "🔴" if severity == 'high' else "🟡"
-                    lines.append(f"- {icon} {game} | {site}: 偏离均值 {deviation:+.1f}%")
-                lines.append("")
-        else:
-            lines.append("- 历史价格数据不足，无法分析趋势")
-            lines.append("")
-        
-        # 新增维度：SKU变动监控（产品策略C + 定价策略A）
-        lines.append("## 2.2 SKU变动监控（新增/下架/调价）")
-        sku_changes = self._extract_sku_changes(changes)
-        if sku_changes:
-            # 新增SKU
-            added_skus = [c for c in sku_changes if c['type'] == 'add']
-            if added_skus:
-                lines.append("### 新增SKU")
-                for sku in added_skus[:10]:  # 最多显示10个
-                    site = sku.get('site', '')
-                    name = sku.get('sku_name', '')
-                    price = sku.get('price', '')
-                    currency = sku.get('currency', 'USD')
-                    lines.append(f"- **{site}** | {name}: {currency}${price}")
-                lines.append("")
-            
-            # 移除SKU
-            removed_skus = [c for c in sku_changes if c['type'] == 'remove']
-            if removed_skus:
-                lines.append("### 下架SKU")
-                for sku in removed_skus[:10]:  # 最多显示10个
-                    site = sku.get('site', '')
-                    name = sku.get('sku_name', '')
-                    price = sku.get('price', '')
-                    currency = sku.get('currency', 'USD')
-                    lines.append(f"- **{site}** | {name}: {currency}${price}")
-                lines.append("")
-            
-            # 价格变动
-            price_changes = [c for c in sku_changes if c['type'] == 'change']
-            if price_changes:
-                lines.append("### SKU价格变动")
-                for sku in price_changes[:10]:  # 最多显示10个
-                    site = sku.get('site', '')
-                    name = sku.get('sku_name', '')
-                    old_price = sku.get('old_price', '')
-                    new_price = sku.get('new_price', '')
-                    currency = sku.get('currency', 'USD')
-                    change_pct = sku.get('change_pct', 0)
-                    direction = "📈" if change_pct > 0 else "📉"
-                    lines.append(f"- **{site}** | {name}: {currency}${old_price} → {currency}${new_price} ({direction} {change_pct:+.1f}%)")
-                lines.append("")
-        else:
-            lines.append("- 今日无显著SKU变动")
-            lines.append("")
-        
-        # 新增维度：促销策略分析（B维度）
-        lines.append("## 2.3 促销策略分析（B维度）")
+        # B4. 首页/品类页主促销位（Hero Promo）
         if promotion_analysis and promotion_analysis.get('promotions_by_site'):
-            summary = promotion_analysis.get('promotion_summary', {})
-            
-            # 促销汇总
-            lines.append("### 促销汇总")
-            lines.append(f"- 总促销数: {summary.get('total_promotions', 0)}")
-            lines.append(f"- 平均折扣率: {summary.get('average_discount', 0)}%")
-            
-            if summary.get('most_active_site'):
-                site, count = summary['most_active_site']
-                lines.append(f"- 最活跃站点: {site} ({count}个促销)")
-                
-            if summary.get('biggest_discount'):
-                bd = summary['biggest_discount']
-                lines.append(f"- 最大折扣: {bd.get('site', '')} | {bd.get('game', '')} | {bd.get('actual_discount_pct', 0)}%")
-            lines.append("")
-            
-            # 促销类型分布
-            lines.append("### 促销类型分布")
-            for promo_type, count in summary.get('promotions_by_type', {}).items():
-                type_name = self._get_promotion_type_name(promo_type)
-                lines.append(f"- {type_name}: {count}个")
-            lines.append("")
-            
-            # 各站点促销详情
-            lines.append("### 各站点促销详情")
-            for site_name, promotions in promotion_analysis.get('promotions_by_site', {}).items():
-                lines.append(f"**{site_name}**:")
-                for promo in promotions[:5]:  # 最多显示5个
-                    game = promo.get('game', '')
-                    type_name = promo.get('type_name', '')
-                    discount = promo.get('actual_discount_pct', 0)
-                    text = promo.get('raw_text', '')[:50]
-                    lines.append(f"  - {game}: {type_name} {discount}% | {text}")
-            lines.append("")
-            
-            # 竞争洞察
-            insights = promotion_analysis.get('competitive_insights', [])
-            if insights:
-                lines.append("### 促销竞争洞察")
-                for insight in insights:
-                    lines.append(f"- {insight.get('description', '')}")
+            hero_promos = self._extract_hero_promos(promotion_analysis)
+            if hero_promos:
+                lines.append("**B4. 首页主促销位（Hero Promo）**")
                 lines.append("")
-        else:
-            lines.append("- 今日未检测到显著促销活动")
-            lines.append("")
+                lines.append(f"| 站点 | 促销类型 | 折扣力度 | 限时 | 动作建议 |")
+                lines.append(f"|------|----------|----------|------|----------|")
+                for promo in hero_promos[:6]:
+                    site = promo.get('site', '')
+                    ptype = promo.get('type', '')
+                    discount = promo.get('discount', '')
+                    limited = "⏰ 是" if promo.get('is_limited') else "-"
+                    action = promo.get('action_suggestion', '评估跟进')
+                    lines.append(f"| {site} | {ptype} | {discount} | {limited} | {action} |")
+                lines.append("")
         
-        # 新增维度：支付方式监控（新增）
-        lines.append("## 2.4 支付方式监控")
-        if payment_analysis and payment_analysis.get('payment_coverage'):
-            coverage = payment_analysis.get('payment_coverage', {})
-            
-            # 支付覆盖概览
-            lines.append("### 支付方式覆盖概览")
-            for site_name, data in coverage.items():
-                lines.append(f"- **{site_name}**: {data.get('total_methods', 0)} 种支付方式")
-                for cat_name, methods in data.get('by_category', {}).items():
-                    if methods:
-                        lines.append(f"  - {cat_name}: {', '.join(methods[:3])}")
-            lines.append("")
-            
-            # 支付变化
-            changes = payment_analysis.get('payment_changes', [])
-            if changes:
-                lines.append("### 支付方式变化")
-                for change in changes[:5]:
-                    icon = '✅' if change.get('change_type') == 'added' else '❌'
-                    lines.append(f"- {icon} {change.get('description', '')}")
+        # B5. 优惠券体系可见性（Coupon UX）
+        if promotion_analysis:
+            coupon_analysis = promotion_analysis.get('coupon_analysis', {})
+            if coupon_analysis:
+                lines.append("**B5. 优惠券体系可见性**")
                 lines.append("")
-            
-            # 竞争差距
-            gaps = payment_analysis.get('competitive_gaps', [])
-            if gaps:
-                lines.append("### 支付覆盖差距")
-                for gap in gaps[:3]:
-                    lines.append(f"- {gap.get('description', '')}")
+                lines.append(f"| 站点 | 券入口位置 | 领取步骤 | 自动应用 | 差距分析 |")
+                lines.append(f"|------|-----------|----------|----------|----------|")
+                for site, data in coupon_analysis.items():
+                    entry = data.get('entry_point', '未知')
+                    steps = data.get('steps', '-')
+                    auto = "✅ 是" if data.get('auto_apply') else "❌ 否"
+                    gap = data.get('gap_analysis', '-')
+                    lines.append(f"| {site} | {entry} | {steps}步 | {auto} | {gap} |")
                 lines.append("")
-        else:
-            lines.append("- 今日未检测到支付方式数据")
-            lines.append("")
         
-        # 新增维度：结算链路摩擦分析（新增）
-        lines.append("## 2.5 结算链路摩擦分析")
+        # B6. 结算链路摩擦（Checkout Friction Index）
         if checkout_analysis and checkout_analysis.get('site_analysis'):
             comparison = checkout_analysis.get('comparison', {})
             site_analysis = checkout_analysis.get('site_analysis', {})
-            
-            # 摩擦分数对比
-            lines.append("### 结算体验对比")
-            if comparison.get('best_practice_site'):
-                lines.append(f"- 最佳实践: **{comparison['best_practice_site']}** (摩擦分数: {comparison.get('best_friction_score')})")
-            
+            lines.append("**B6. 结算链路摩擦指数**")
+            lines.append("")
+            lines.append(f"| 站点 | 步骤数 | 强制注册 | 摩擦分数 | 评级 | 优化建议 |")
+            lines.append(f"|------|--------|----------|----------|------|----------|")
             for site_name, analyses in site_analysis.items():
                 if analyses:
-                    avg_score = sum(a.get('friction_score', 0) for a in analyses) / len(analyses)
-                    level = analyses[0].get('friction_level', 'unknown')
+                    analysis = analyses[0]
+                    steps = analysis.get('estimated_steps', '-')
+                    login_req = "❌ 是" if analysis.get('requires_login') else "✅ 否"
+                    guest = "✅ 支持" if analysis.get('guest_available') else "❌ 不支持"
+                    score = analysis.get('friction_score', 0)
+                    level = analysis.get('friction_level', 'unknown')
                     level_icon = "🟢" if level == 'low' else "🟡" if level == 'medium' else "🔴"
-                    lines.append(f"- {level_icon} **{site_name}**: 摩擦分数 {avg_score:.0f}/100 ({level})")
-                    
-                    # 显示关键发现
-                    for analysis in analyses[:1]:  # 只显示第一个页面的分析
-                        if analysis.get('requires_login') and not analysis.get('guest_checkout_available'):
-                            lines.append(f"  - ⚠️ 强制登录，不支持游客下单")
-                        if analysis.get('payment_method_count', 0) > 0:
-                            lines.append(f"  - 支持 {analysis.get('payment_method_count')} 种支付方式")
-            lines.append("")
-            
-            # 优化建议
-            if comparison.get('action_recommendation'):
-                lines.append("### 优化建议")
-                lines.append(f"- {comparison['action_recommendation']}")
-                lines.append("")
-        else:
-            lines.append("- 今日未检测到结算流程数据")
+                    # 优化建议
+                    recs = analysis.get('recommendations', [])
+                    top_rec = recs[0] if recs else '-'
+                    lines.append(f"| {site_name} | {steps} | {login_req} | {score:.0f}/100 | {level_icon} {level} | {top_rec[:20]}... |")
+            if comparison.get('best_practice_site'):
+                lines.append(f"\n💡 **最佳实践**: {comparison['best_practice_site']}（分数: {comparison.get('best_friction_score', 0):.0f}）")
             lines.append("")
         
-        # 新增维度：库存状态变化（P1）
-        lines.append("## 3. 库存状态监控（P1）")
-        if stock_changes:
-            for sc in stock_changes:
-                site = sc.get('site', '')
-                game = sc.get('game', '')
-                status = sc.get('status', '')
-                lines.append(f"- {site} | {game}: {status}")
-        else:
-            lines.append("- 今日无显著库存状态变化")
+        # C. 支付与履约（决定复购与售后成本）
+        lines.append("### C. 支付与履约 💳")
         lines.append("")
         
-        # 新增维度：评价评分变化（P1）
-        lines.append("## 4. 评价评分监控（P1）")
-        
-        # 基础评分变化
-        if rating_changes:
-            for rc in rating_changes:
-                site = rc.get('site', '')
-                game = rc.get('game', '')
-                rating = rc.get('rating', '')
-                review_count = rc.get('review_count', '')
-                change = rc.get('change', '')
-                lines.append(f"- {site} | {game}: 评分 {rating} | 评价数 {review_count} ({change})")
-        else:
-            lines.append("- 今日无显著评分变化")
-        lines.append("")
-        
-        # 新增：交付时效承诺监控
-        lines.append("### 交付时效承诺监控")
-        delivery_commitments_found = False
-        for result in crawl_results:
-            site_name = result.get('site_name', '')
+        # C7. 支付方式覆盖与可用性（Payment Coverage & Uptime）
+        if payment_analysis and payment_analysis.get('payment_coverage'):
+            coverage = payment_analysis.get('payment_coverage', {})
+            lines.append("**C7. 支付方式覆盖与可用性**")
+            lines.append("")
+            lines.append(f"| 站点 | 支付方式数 | 信用卡 | 数字钱包 | 本地支付 | 加密 | 动作建议 |")
+            lines.append(f"|------|-----------|--------|----------|----------|------|----------|")
+            for site_name, data in coverage.items():
+                total = data.get('total_methods', 0)
+                by_cat = data.get('by_category', {})
+                cc = len(by_cat.get('credit_card', []))
+                wallet = len(by_cat.get('digital_wallet', []))
+                local = len(by_cat.get('local_payment', []))
+                crypto = len(by_cat.get('crypto', []))
+                # 动作建议
+                if local >= 3:
+                    action = "✅ 覆盖完善"
+                elif local >= 1:
+                    action = "📊 可补充"
+                else:
+                    action = "⚠️ 本地支付缺失"
+                lines.append(f"| {site_name} | {total} | {cc} | {wallet} | {local} | {crypto} | {action} |")
+            lines.append("")
             
-            # 跳过第三方评价平台
-            if site_name.lower() in ['trustpilot']:
-                continue
-                
-            for page in result.get('pages', []):
-                if not page.get('success'):
-                    continue
-                snapshot_path = page.get('snapshot_path', '')
-                if snapshot_path:
-                    try:
-                        import json
-                        meta_path = f"{snapshot_path}.json"
-                        with open(meta_path, 'r', encoding='utf-8') as f:
-                            meta = json.load(f)
-                        
-                        # 尝试从解析数据中获取交付承诺
-                        parsed_path = snapshot_path.replace('/snapshots/', '/parsed/') + '.json'
-                        if os.path.exists(parsed_path):
-                            with open(parsed_path, 'r', encoding='utf-8') as f:
-                                parsed_data = json.load(f)
-                            
-                            delivery_commitment = parsed_data.get('delivery_commitment', {})
-                            if delivery_commitment.get('has_clear_sla'):
-                                delivery_commitments_found = True
-                                sla_summary = delivery_commitment.get('sla_summary', '')
-                                transparency = delivery_commitment.get('transparency_score', 0)
-                                icon = "🟢" if transparency >= 70 else "🟡" if transparency >= 40 else "🔴"
-                                lines.append(f"- {icon} **{site_name}**: {sla_summary} (透明度: {transparency}/100)")
-                                
-                                # 显示异常声明
-                                exceptions = delivery_commitment.get('exceptions', [])
-                                if exceptions:
-                                    for exc in exceptions[:2]:
-                                        lines.append(f"  - ⚠️ 异常声明: {exc.get('raw', '')[:60]}")
-                                break
-                    except Exception:
-                        continue
+            # 支付变化提醒
+            pay_changes = payment_analysis.get('payment_changes', [])
+            if pay_changes:
+                lines.append("**支付变化提醒**: " + " | ".join([
+                    f"{'🟢+' if c.get('change_type') == 'added' else '🔴-'} {c.get('description', '')}"
+                    for c in pay_changes[:3]
+                ]))
+                lines.append("")
         
-        if not delivery_commitments_found:
-            lines.append("- 今日未检测到明确的交付时效承诺")
+        # C8. 交付时效承诺（Delivery SLA）
+        lines.append("**C8. 交付时效承诺透明度**")
+        lines.append("")
+        lines.append("*注：需人工抽检商品页/结算页是否写明交付时效承诺*")
         lines.append("")
         
-        # 新增：用户反馈深度分析
-        if review_analysis:
-            lines.append("### 用户反馈深度分析")
-            
-            # 情感汇总
-            sentiment = review_analysis.get('sentiment_summary', {})
-            if sentiment:
-                lines.append("**情感分布**:")
-                dist = sentiment.get('sentiment_distribution', {})
-                total = sentiment.get('total_reviews', 0)
-                avg_rating = sentiment.get('average_rating', 0)
-                lines.append(f"- 总评价数: {total} | 平均评分: {avg_rating}")
-                lines.append(f"- 正面: {dist.get('positive', 0)} | 负面: {dist.get('negative', 0)} | 中性: {dist.get('neutral', 0)}")
-                lines.append("")
-                
-                # 各站点评分对比
-                lines.append("**各站点评分对比**:")
-                for site, rating in sentiment.get('rating_by_site', {}).items():
-                    lines.append(f"- {site}: {rating}")
-                lines.append("")
-                
-            # 关键词分析
-            keyword_analysis = review_analysis.get('keyword_analysis', {})
-            if keyword_analysis:
-                lines.append("**高频关键词**:")
-                for kw in keyword_analysis.get('top_keywords', [])[:5]:
-                    lines.append(f"- {kw['word']}: {kw['count']}次")
-                lines.append("")
-                
-                lines.append("**反馈类别分布**:")
-                for category, counts in keyword_analysis.get('category_distribution', {}).items():
-                    cat_name = self._get_category_name(category)
-                    pos = counts.get('positive', 0)
-                    neg = counts.get('negative', 0)
-                    lines.append(f"- {cat_name}: 正面{pos} | 负面{neg}")
-                lines.append("")
-                
-            # 趋势问题
-            trending_issues = review_analysis.get('trending_issues', [])
-            if trending_issues:
-                lines.append("**⚠️ 趋势性问题**:")
-                for issue in trending_issues:
-                    game = issue.get('game', '')
-                    issue_name = issue.get('issue_name', '')
-                    count = issue.get('mention_count', 0)
-                    severity = issue.get('severity', 'medium')
-                    icon = "🔴" if severity == 'high' else "🟡"
-                    lines.append(f"- {icon} {game}: {issue_name} (提及{count}次)")
-                lines.append("")
+        # C9. 退款/纠纷政策可达性（Refund Policy）
+        lines.append("**C9. 退款政策可达性**")
+        lines.append("")
+        lines.append("*注：需人工检查退款条款是否容易找到、是否有自助入口*")
+        lines.append("")
         
-        # 新增维度：新增游戏监控（C维度-产品策略）
-        lines.append("## 5. 新增游戏监控（产品策略C）")
+        # D. 需求侧信号（告诉你该把资源投哪里）
+        lines.append("### D. 需求侧信号 📊")
+        lines.append("")
+        
+        # D10. 竞品主推国家/品类变化
+        lines.append("**D10. 竞品主推国家/品类变化**")
+        lines.append("")
         if new_games:
-            for ng in new_games:
-                site = ng.get('site_name', '')
-                game = ng.get('game', '')
-                lines.append(f"- **{site}** 新增游戏: **{game}**")
-        else:
-            lines.append("- 今日无新增游戏")
-        lines.append("")
-        
-        # 国家 & 游戏聚焦检查
-        lines.append('## 6. 国家 & 游戏聚焦检查（只写“有变化/有信号”的项）')
-                
-        # 6.1 国家
-        lines.append("### 6.1 国家（美国/英国/德国/法国/日本/韩国/新加坡/马来西亚/澳大利亚/加拿大）")
-        country_changes = self._extract_country_focus(changes)
-        if country_changes:
-            for cc in country_changes:
-                lines.append(f"- {cc}")
-        else:
-            lines.append("- 无显著国家相关变化")
-        lines.append("")
-                
-        # 6.2 游戏
-        lines.append("### 6.2 游戏（原神/PUBG/崩坏星穹铁道/绝区零/鸣潮/无尽对决/王者荣耀/三角洲行动/暗区突围）")
-        game_changes = self._extract_game_focus(changes)
-        if game_changes:
-            for gc in game_changes:
-                lines.append(f"- {gc}")
-        else:
-            lines.append("- 无显著游戏相关变化")
-        lines.append("")
-        
-        # 6.3 站点专项监控（LootBar / LDShop当日首页动态 + 支付促销）
-        lines.append("### 6.3 站点专项监控")
-        specialist_sections = self._build_specialist_sections(crawl_results)
-        if specialist_sections:
-            lines.extend(specialist_sections)
-        else:
-            lines.append("- 本日无新增专项监控信息")
-        lines.append("")
-        
-        # 弱信号
-        lines.append("## 7. 弱信号（需要继续观察）")
+            lines.append(f"🆕 **新增游戏**: {', '.join([g.get('name', '') for g in new_games[:5]])}")
         if weak_signals:
+            focus_changes = [s for s in weak_signals if s.get('type') in ['title_change', 'content_change']]
+            if focus_changes:
+                lines.append(f"\n📍 **主推变化**:")
+                for sig in focus_changes[:5]:
+                    lines.append(f"- {sig.get('site', '')}: {sig.get('description', '')}")
+        lines.append("")
+        lines.append("*动作建议：竞品连续多天主推某国家/品类，评估是否跟进投放*")
+        lines.append("")
+        
+        # ========== 第四部分：补充监控数据（折叠展示） ==========
+        has_supplementary = stock_changes or rating_changes or new_games
+        if has_supplementary:
+            lines.append("<details>")
+            lines.append("<summary>补充监控数据 - 点击展开</summary>")
+            lines.append("")
+            
+            # 库存状态
+            if stock_changes:
+                lines.append("**库存状态变化**:")
+                for sc in stock_changes:
+                    site = sc.get('site', '')
+                    game = sc.get('game', '')
+                    status = sc.get('status', '')
+                    lines.append(f"- {site} | {game}: {status}")
+                lines.append("")
+            
+            # 评价评分
+            if rating_changes:
+                lines.append("**评价评分变化**:")
+                for rc in rating_changes:
+                    site = rc.get('site', '')
+                    game = rc.get('game', '')
+                    rating = rc.get('rating', '')
+                    review_count = rc.get('review_count', '')
+                    lines.append(f"- {site} | {game}: 评分 {rating} | 评价数 {review_count}")
+                lines.append("")
+            
+            # 新增游戏
+            if new_games:
+                lines.append("**新增游戏**:")
+                for ng in new_games:
+                    site = ng.get('site_name', '')
+                    game = ng.get('game', '')
+                    lines.append(f"- **{site}**: {game}")
+                lines.append("")
+            
+            lines.append("</details>")
+            lines.append("")
+        
+        # ========== 第五部分：聚焦检查（精简） ==========
+        # 只展示有变化的内容
+        country_changes = self._extract_country_focus(changes)
+        game_changes = self._extract_game_focus(changes)
+        specialist_sections = self._build_specialist_sections(crawl_results)
+                
+        has_focus_changes = country_changes or game_changes or specialist_sections
+        if has_focus_changes:
+            lines.append("## 重点聚焦")
+            lines.append("")
+                    
+            if country_changes:
+                lines.append("**国家/地区**: " + " | ".join([c[:50] for c in country_changes[:3]]))
+                lines.append("")
+                    
+            if game_changes:
+                lines.append("**重点游戏**: " + " | ".join([g[:50] for g in game_changes[:3]]))
+                lines.append("")
+                    
+            if specialist_sections:
+                lines.extend(specialist_sections)
+                lines.append("")
+                
+        # ========== 第六部分：弱信号（有则显示） ==========
+        if weak_signals:
+            lines.append("## 弱信号观察")
+            lines.append("")
             for signal in weak_signals:
                 lines.append(f"- {signal.get('description', '')}")
-        else:
-            lines.append("- 无")
+            lines.append("")
+                
+        # ========== 第七部分：待办清单 ==========
+        lines.append("## 今日待办")
         lines.append("")
-        
-        # 我方今日待办
-        lines.append("## 8. 我方今日待办（把建议动作抽成清单）")
         if todos:
-            for todo in todos:
+            # 去重并限制数量
+            unique_todos = list(dict.fromkeys(todos))[:10]  # 最多10条，保持顺序
+            for todo in unique_todos:
                 lines.append(f"- [ ] {todo}")
         else:
             lines.append("- [ ] 持续监控竞品动态")
         lines.append("")
-        
-        # 抓取与对比日志
-        lines.append("## 9. 抓取与对比日志")
-        
+                
+        # ========== 第八部分：技术日志（折叠） ==========
+        lines.append("<details>")
+        lines.append("<summary>抓取与对比日志 - 点击展开</summary>")
+        lines.append("")
+                
         total_pages = sum(r.get('success_count', 0) + r.get('fail_count', 0) for r in crawl_results)
         success_pages = sum(r.get('success_count', 0) for r in crawl_results)
-        
-        lines.append(f"- 成功抓取：{success_pages} 页；有效变化：{len(changes)} 条")
+                
+        lines.append(f"- 成功抓取：{success_pages}/{total_pages} 页")
+        lines.append(f"- 有效变化：{len(changes)} 条")
         lines.append("")
-        
+                
         # 失败页面
-        lines.append("### 失败页面：")
-        has_failures = False
+        failed_pages = []
         for result in crawl_results:
             site_name = result.get('site_name', '')
             for page in result.get('pages', []):
                 if not page.get('success'):
-                    has_failures = True
                     url = page.get('url', '')
                     error = page.get('error', '未知错误')
-                    lines.append(f"- {site_name} | {url} | {error}")
-                    
-        if not has_failures:
-            lines.append("- 无")
+                    failed_pages.append(f"- {site_name} | {url} | {error}")
+                
+        if failed_pages:
+            lines.append("**失败页面**:")
+            lines.extend(failed_pages[:10])  # 最多显示10条
+            if len(failed_pages) > 10:
+                lines.append(f"- ... 还有 {len(failed_pages) - 10} 个失败页面")
+        else:
+            lines.append("- 无失败页面")
+                
         lines.append("")
-        
+        lines.append("</details>")
+        lines.append("")
+                
         # 页脚
         lines.append("---")
         lines.append(f"生成时间: {datetime.now().strftime('%Y-%m-%d %H:%M')} CST")
-        
+                
         return '\n'.join(lines)
         
-    def _append_change_detail(self, lines: List[str], idx: int, change: Dict[str, Any]):
-        """添加变化详情"""
+    def _merge_changes_by_url(self, changes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """合并相同URL的变化，避免重复"""
+        url_map = {}
+        
+        for change in changes:
+            url = change.get('url', '')
+            if not url:
+                continue
+            
+            # 使用URL作为key，合并相同页面的变化
+            if url in url_map:
+                # 合并描述
+                existing = url_map[url]
+                existing_desc = existing.get('description', '')
+                new_desc = change.get('description', '')
+                if new_desc and new_desc not in existing_desc:
+                    existing['description'] = existing_desc + "; " + new_desc
+                
+                # 合并结构化变化
+                existing_structured = existing.get('structured_changes', [])
+                new_structured = change.get('structured_changes', [])
+                existing['structured_changes'] = existing_structured + new_structured
+                
+                # 合并维度
+                existing_dims = set(existing.get('dimensions', []))
+                new_dims = set(change.get('dimensions', []))
+                existing['dimensions'] = list(existing_dims | new_dims)
+            else:
+                url_map[url] = change.copy()
+        
+        return list(url_map.values())
+    
+    def _append_change_detail_compact(self, lines: List[str], idx: int, change: Dict[str, Any]):
+        """添加精简版变化详情"""
         site = change.get('site_name', '')
         desc = change.get('description', '未知变化')
         dims = change.get('dimensions', [])
+        url = change.get('url', '')
+        context = change.get('context', '')[:80]
         
-        lines.append(f"### 1.{idx} {site}｜{desc[:50]}")
+        # 主标题
+        lines.append(f"**{idx}. {site}**｜{desc[:60]}")
         lines.append("")
-        lines.append(f"- 变化：{desc}")
-        lines.append(f"- 证据：URL：{change.get('url', '')}；摘录：\"{change.get('context', '')[:100]}\"")
-        lines.append(f"- 归类：{'/'.join(dims)}")
         
-        # 根据维度生成基础分析
+        # 证据和归类（一行展示）
+        dim_str = '/'.join(dims) if dims else '-'
+        lines.append(f"📍 **证据**: [{url}]({url})｜**归类**: {dim_str}")
+        if context:
+            lines.append(f"📝 **摘录**: {context}")
+        lines.append("")
+        
+        # 生成分析
         purpose, impact, actions = self._generate_analysis(change)
         
-        lines.append("- 可能目的（推测需标注）：")
-        for p in purpose:
-            lines.append(f"  - {p}")
+        # 只展示最重要的1-2条分析
+        if purpose:
+            lines.append(f"💡 **目的**: {purpose[0].replace('【推测】', '')}")
+        if impact:
+            lines.append(f"⚠️ **影响**: {impact[0].replace('【待评估】', '').replace('若', '')}")
+        if actions:
+            lines.append(f"✅ **建议**: {actions[0].replace('【待确认】', '')}")
         
-        lines.append("- 对我方影响：")
-        for i in impact:
-            lines.append(f"  - {i}")
-        
-        lines.append("- 建议动作（可选）：")
-        for a in actions:
-            lines.append(f"  - {a}")
         lines.append("")
         
     def _generate_analysis(self, change: Dict[str, Any]) -> tuple:
@@ -691,13 +634,9 @@ class ReportBuilder:
         return game_changes
         
     def _build_specialist_sections(self, crawl_results: List[Dict[str, Any]]) -> List[str]:
-        """
-        构建站点专项监控章节：
-        - LootBar首页：弹窗促销码 / 轮播图 / 热门游戏
-        - LDShop首页：公告 Banner
-        - LDShop产品页：支付渠道促销
-        """
+        """构建站点专项监控章节（精简版）"""
         lines = []
+        has_content = False
 
         for site_result in (crawl_results or []):
             site_name = site_result.get('site_name', '')
@@ -711,50 +650,35 @@ class ReportBuilder:
 
                 # ---- LootBar首页 ----
                 if 'lootbar.gg' in url and page_type == 'homepage':
-                    lines.append(f"\n**LootBar 首页动态**")
-
-                    # 弹窗促销码
+                    if not has_content:
+                        lines.append("**站点动态**:")
+                        has_content = True
+                    
                     popup = sd.get('popup')
+                    trending = sd.get('trending_games', [])
+                    
                     if popup:
                         code = popup.get('promo_code', '')
                         disc = popup.get('discount_text', '')
-                        lines.append(f"- 弹窗促销: 折扣码 `{code}` | 力度: {disc}")
-
-                    # 轮播图活动
-                    banners = sd.get('carousel_banners', [])
-                    if banners:
-                        lines.append(f"- 首页轮播图（前{len(banners)}张）:")
-                        for b in banners:
-                            title = b.get('title', '')
-                            sub = b.get('subtitle', '')
-                            lines.append(f"  - {title}" + (f" — {sub}" if sub else ''))
-
-                    # 热门游戏
-                    trending = sd.get('trending_games', [])
+                        lines.append(f"- **LootBar** 弹窗促销: `{code}` ({disc})")
+                    
                     if trending:
-                        lines.append(f"- 主推游戏 TOP{len(trending)}: {' / '.join(trending)}")
+                        lines.append(f"- **LootBar** 主推: {', '.join(trending[:3])}")
 
                 # ---- LDShop首页 ----
                 elif 'ldshop.gg' in url and page_type == 'homepage':
                     announcements = sd.get('announcements', [])
                     if announcements:
-                        lines.append(f"\n**LDShop 首页公告**")
+                        if not has_content:
+                            lines.append("**站点动态**:")
+                            has_content = True
+                        
                         seen_ann = set()
-                        for ann in announcements:
-                            # 清理换行，取第一行作为主文案
-                            clean = ann.split('\n')[0].strip()
+                        for ann in announcements[:2]:  # 最多2条
+                            clean = ann.split('\n')[0].strip()[:80]
                             if clean and clean not in seen_ann:
                                 seen_ann.add(clean)
-                                lines.append(f"- {clean[:120]}")
-
-                # ---- LDShop产品页 ----
-                elif 'ldshop.gg' in url and page_type == 'product':
-                    pay_promos = sd.get('payment_promos', [])
-                    if pay_promos:
-                        game = page.get('game', url)
-                        lines.append(f"\n**LDShop {game} 支付促销**")
-                        for p in pay_promos:
-                            lines.append(f"- {p[:120]}")
+                                lines.append(f"- **LDShop** 公告: {clean}")
 
         return lines
 
@@ -894,3 +818,59 @@ class ReportBuilder:
             'experience': '购买体验'
         }
         return category_names.get(category, category)
+        
+    def _extract_hero_promos(self, promotion_analysis: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        提取首页主促销位（Hero Promo）信息
+        
+        Returns:
+            Hero Promo列表，包含站点、类型、折扣力度、是否限时、动作建议
+        """
+        hero_promos = []
+        
+        promotions_by_site = promotion_analysis.get('promotions_by_site', {})
+        
+        for site_name, promos in promotions_by_site.items():
+            for promo in promos:
+                promo_type = promo.get('type', 'other')
+                discount_pct = promo.get('actual_discount_pct', 0)
+                
+                # 判断是否高优先级促销
+                is_hero = promo_type in ['first_order', 'flash_sale', 'percentage_discount']
+                
+                if is_hero:
+                    # 确定促销类型名称
+                    type_name = self._get_promotion_type_name(promo_type)
+                    
+                    # 折扣力度描述
+                    if discount_pct > 0:
+                        discount_desc = f"{discount_pct}%"
+                    else:
+                        discount_desc = promo.get('raw_text', '')[:20]
+                    
+                    # 判断是否限时
+                    is_limited = any(kw in promo.get('raw_text', '').lower() 
+                                   for kw in ['limited', 'flash', 'countdown', '限时', '秒杀'])
+                    
+                    # 动作建议
+                    if promo_type == 'first_order':
+                        action = "当天补齐新客优惠"
+                    elif promo_type == 'flash_sale':
+                        action = "评估限时促销跟进"
+                    elif discount_pct > 20:
+                        action = "关注大幅折扣影响"
+                    else:
+                        action = "持续监测"
+                    
+                    hero_promos.append({
+                        'site': site_name,
+                        'type': type_name,
+                        'discount': discount_desc,
+                        'is_limited': is_limited,
+                        'action_suggestion': action,
+                        'priority': 1 if promo_type == 'first_order' else 2
+                    })
+        
+        # 按优先级排序
+        hero_promos.sort(key=lambda x: x['priority'])
+        return hero_promos

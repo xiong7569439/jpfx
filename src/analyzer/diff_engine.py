@@ -794,7 +794,6 @@ class DiffEngine:
         监控以下页面：
         - LDShop: /catalog/all (Found results:XXX) - 支持多页合并
         - LootBar: /top-up/ (Total XXX items)
-        - TOPUPlive: 不监控
         
         Returns:
             新增游戏列表
@@ -808,10 +807,6 @@ class DiffEngine:
         
         for site_result in crawl_results:
             site_name = site_result['site_name']
-            
-            # 跳过 TOPUPlive 的监控
-            if site_name == 'TOPUPlive':
-                continue
             
             # 收集今日所有游戏列表页数据（支持多页）
             today_catalog_pages = []

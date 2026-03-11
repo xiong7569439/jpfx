@@ -1,11 +1,5 @@
 # 竞品站点配置
 competitors:
-  - name: "TOPUPlive"
-    domain: "topuplive.com"
-    base_url: "https://www.topuplive.com"
-    enabled: true
-    is_own_site: true
-    
   - name: "LootBar"
     domain: "lootbar.gg"
     base_url: "https://www.lootbar.gg"

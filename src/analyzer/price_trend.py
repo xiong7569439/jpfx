@@ -267,11 +267,7 @@ class PriceTrendAnalyzer:
         
         competitiveness = {
             'game': game_name,
-            'rankings': [],
-            'topuplive_position': None,
-            'price_gap_to_cheapest': 0,
-            'price_gap_to_most_expensive': 0,
-            'competitiveness_score': 0  # 0-100，越高越有竞争力
+            'rankings': []
         }
         
         # 计算排名
@@ -281,34 +277,6 @@ class PriceTrendAnalyzer:
                 'site': site_name,
                 'price': price
             })
-            
-            if site_name == 'TOPUPlive':
-                competitiveness['topuplive_position'] = rank
-                
-        # 计算TOPUPlive的竞争力
-        if 'TOPUPlive' in latest_prices:
-            topuplive_price = latest_prices['TOPUPlive']
-            cheapest_price = sorted_prices[0][1]
-            most_expensive_price = sorted_prices[-1][1]
-            
-            competitiveness['price_gap_to_cheapest'] = round(
-                topuplive_price - cheapest_price, 2
-            )
-            competitiveness['price_gap_to_most_expensive'] = round(
-                most_expensive_price - topuplive_price, 2
-            )
-            
-            # 竞争力评分：基于排名和价格差距
-            total_sites = len(sorted_prices)
-            if total_sites > 1:
-                rank_score = ((total_sites - competitiveness['topuplive_position']) / 
-                             (total_sites - 1)) * 100
-                
-                # 如果是最低价，额外加分
-                if competitiveness['topuplive_position'] == 1:
-                    rank_score = 100
-                    
-                competitiveness['competitiveness_score'] = round(rank_score, 1)
                 
         return competitiveness
         
@@ -399,7 +367,7 @@ class PriceTrendAnalyzer:
                             direction if date == dates[-1] else '',
                             volatility if date == dates[-1] else '',
                             rank if date == dates[-1] else '',
-                            score if date == dates[-1] and site_name == 'TOPUPlive' else ''
+                            ''
                         ])
                         
         logger.info(f"价格趋势数据已导出: {output_path}")

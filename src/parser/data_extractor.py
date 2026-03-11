@@ -194,8 +194,6 @@ class DataExtractor:
             sku_prices = self._extract_lootbar_skus(soup)
         elif 'ldshop.gg' in url:
             sku_prices = self._extract_ldshop_skus(soup)
-        elif 'topuplive.com' in url:
-            sku_prices = self._extract_topuplive_skus(soup, text)
         else:
             # 通用提取逻辑
             sku_prices = self._extract_generic_skus(soup, text)
@@ -253,9 +251,48 @@ class DataExtractor:
         
         return sku_prices
         
+    def _extract_nuxt_data(self, html: str) -> Dict[str, Any]:
+        """
+        从页面的 __NUXT__ 数据中提取完整商品信息
+        LDShop 等 Nuxt.js 站点会在 window.__NUXT__ 中存储完整数据
+        """
+        nuxt_data = {}
+        try:
+            # 查找 window.__NUXT__ 数据
+            nuxt_match = re.search(r'window\.__NUXT__\s*=\s*(\{.*?\});', html, re.DOTALL)
+            if nuxt_match:
+                # 尝试解析 JSON（可能需要处理 JavaScript 对象格式）
+                nuxt_json = nuxt_match.group(1)
+                # 简化的提取：查找 commodityName 和 skuName
+                commodity_names = re.findall(r'"commodityName":\s*"([^"]+)"', nuxt_json)
+                sku_names = re.findall(r'"skuName":\s*"([^"]+)"', nuxt_json)
+                
+                nuxt_data['commodity_names'] = list(set(commodity_names))
+                nuxt_data['sku_names'] = list(set(sku_names))
+                
+                # 查找 alt 属性中的完整名称
+                alt_names = re.findall(r'alt="([^"]{10,80})"', html)
+                nuxt_data['alt_names'] = [a for a in alt_names if '****' not in a and len(a) > 5]
+        except Exception as e:
+            logger.debug(f"提取 NUXT 数据失败: {e}")
+        
+        return nuxt_data
+    
     def _extract_ldshop_skus(self, soup: BeautifulSoup) -> List[Dict[str, Any]]:
         """提取LDShop网站的SKU价格"""
         sku_prices = []
+        
+        # 首先尝试从 NUXT 数据获取完整名称映射
+        html = str(soup)
+        nuxt_data = self._extract_nuxt_data(html)
+        
+        # 构建完整名称映射（脱敏名称 -> 完整名称）
+        name_mapping = {}
+        for alt_name in nuxt_data.get('alt_names', []):
+            # 提取可能的脱敏名称前缀用于匹配
+            if len(alt_name) > 10:
+                # 存储完整名称供后续查找
+                name_mapping[alt_name.lower()] = alt_name
         
         # LDShop使用 card-wrapper 作为商品卡片容器
         # 从HTML结构看：
@@ -270,16 +307,28 @@ class DataExtractor:
             try:
                 # 提取SKU名称 - 在 line-clamp-2 类的 p 标签中
                 name = ''
+                masked_name = ''
                 name_elem = card.find('p', class_=lambda c: c and 'line-clamp-2' in c)
                 if name_elem:
-                    name = name_elem.get_text(strip=True)
+                    masked_name = name_elem.get_text(strip=True)
+                    name = masked_name
                 
                 # 如果没找到，尝试其他选择器
                 if not name:
                     for name_selector in ['.product-name', '.item-name', 'h3', 'h4', '.title', '[class*="name"]']:
                         name_elem = card.select_one(name_selector)
                         if name_elem:
-                            name = name_elem.get_text(strip=True)
+                            masked_name = name_elem.get_text(strip=True)
+                            name = masked_name
+                            break
+                
+                # 尝试从 NUXT 数据中查找完整名称
+                if masked_name and '****' in masked_name:
+                    # 提取脱敏前的部分进行匹配
+                    prefix = masked_name.split('****')[0].lower()
+                    for full_name in nuxt_data.get('alt_names', []):
+                        if full_name.lower().startswith(prefix):
+                            name = full_name
                             break
                 
                 # 提取价格 - 在 bottom-wrapper 内的第一个价格
@@ -361,124 +410,6 @@ class DataExtractor:
                         continue
         
         return sku_prices
-        
-    def _extract_topuplive_skus(self, soup: BeautifulSoup, text: str = '') -> List[Dict[str, Any]]:
-        """提取TOPUPlive网站的SKU价格"""
-        sku_prices = []
-        
-        # 策略1: 尝试从页面中的价格卡片结构提取
-        selectors = [
-            '.product-card',
-            '.price-item',
-            '[class*="package"]',
-            '[class*="sku"]',
-            '[class*="product"]',
-            '[class*="item"]',
-            '.game-item',
-            '.top-up-item',
-        ]
-        
-        for selector in selectors:
-            items = soup.select(selector)
-            for item in items:
-                try:
-                    # 尝试提取名称
-                    name = ''
-                    for name_selector in ['.package-name', '.product-title', 'h3', 'h4', '.name', '[class*="title"]', '[class*="name"]']:
-                        name_elem = item.select_one(name_selector)
-                        if name_elem:
-                            name = name_elem.get_text(strip=True)
-                            break
-                    
-                    # 尝试提取价格
-                    price = None
-                    price_text = ''
-                    for price_selector in ['.price', '.current-price', '.sale-price', '[class*="price"]', '[class*="amount"]']:
-                        price_elem = item.select_one(price_selector)
-                        if price_elem:
-                            price_text = price_elem.get_text(strip=True)
-                            price_match = re.search(r'[\d,]+\.?\d*', price_text)
-                            if price_match:
-                                price = price_match.group(0).replace(',', '')
-                                break
-                    
-                    if name and price:
-                        sku_prices.append({
-                            'sku_name': name,
-                            'price': price,
-                            'currency': self._detect_currency(price_text) if price_text else 'USD',
-                            'sku_id': self._generate_sku_id(name)
-                        })
-                except Exception:
-                    continue
-        
-        # 策略2: 从页面文本中提取 SKU 名称 + 价格模式
-        # TOPUPlive 常见模式：
-        # - "60 Genesis Crystals\nS$\n1.12\n1.27" (多行格式)
-        # - "60 Genesis Crystals - $0.99" (单行格式)
-        if not sku_prices or len(sku_prices) < 3:
-            # 多行模式：SKU名称 + S$ + 价格 + 原价
-            # 例如：
-            # 60 Genesis Crystals
-            # S$
-            # 1.12
-            # 1.27
-            multiline_pattern = r'([\w\s\-\*\+]+(?:Crystals?|Crystal|UC|Diamonds?|Gems?|Coins?|Tokens?|Points?|Golds?|Moon|Bundle)[\w\s\-\*\+]*?)\nS\$\s*\n?([\d,]+\.?\d*)'
-            
-            matches = re.finditer(multiline_pattern, text, re.IGNORECASE | re.MULTILINE)
-            for match in matches:
-                try:
-                    sku_name = match.group(1).strip()
-                    price = match.group(2).replace(',', '')
-                    # 过滤掉过短或无效的名称
-                    if len(sku_name) > 3 and float(price) > 0 and 'S$' not in sku_name:
-                        sku_prices.append({
-                            'sku_name': sku_name,
-                            'price': price,
-                            'currency': 'SGD',
-                            'sku_id': self._generate_sku_id(sku_name)
-                        })
-                except (ValueError, IndexError):
-                    continue
-            
-            # 单行模式匹配
-            if len(sku_prices) < 3:
-                patterns = [
-                    # 匹配 "数量 单位/商品名 价格" 格式
-                    r'(\d+(?:\s*\+\s*\d+)?\s*(?:Genesis Crystals?|UC|diamonds?|gems?|coins?|tokens?|points?|golds?)[^\n\$]{0,50})\s*[-:]?\s*\$\s*([\d,]+\.?\d*)',
-                    # 匹配 "数量+数量 单位" 格式（如 6480+1600）
-                    r'(\d+\s*\+\s*\d+\s*[^\n\$]{0,50})\s*[-:]?\s*\$\s*([\d,]+\.?\d*)',
-                    # 匹配通用商品名 + 价格
-                    r'((?:\d+\s+)?(?:Crystal|Shard|Diamond|Gem|Coin|Token)[^\n\$]{0,30})\s*[-:]?\s*\$\s*([\d,]+\.?\d*)',
-                ]
-                
-                for pattern in patterns:
-                    matches = re.finditer(pattern, text, re.IGNORECASE)
-                    for match in matches:
-                        try:
-                            sku_name = match.group(1).strip()
-                            price = match.group(2).replace(',', '')
-                            # 过滤掉过短的名称
-                            if len(sku_name) > 3 and float(price) > 0:
-                                sku_prices.append({
-                                    'sku_name': sku_name,
-                                    'price': price,
-                                    'currency': 'USD',
-                                    'sku_id': self._generate_sku_id(sku_name)
-                                })
-                        except (ValueError, IndexError):
-                            continue
-        
-        # 去重
-        seen = set()
-        unique_prices = []
-        for p in sku_prices:
-            key = f"{p['sku_id']}_{p['price']}"
-            if key not in seen:
-                seen.add(key)
-                unique_prices.append(p)
-        
-        return unique_prices
         
     def _extract_generic_skus(self, soup: BeautifulSoup, text: str) -> List[Dict[str, Any]]:
         """通用SKU提取逻辑"""
@@ -1579,12 +1510,6 @@ class DataExtractor:
         elif 'lootbar.gg' in url:
             # LootBar: "Total 128 items"
             match = re.search(r'Total\s+(\d+)\s+items?', text, re.IGNORECASE)
-            if match:
-                info['total_items'] = int(match.group(1))
-        
-        elif 'topuplive.com' in url:
-            # TOPUPlive: "Result found : 106"
-            match = re.search(r'Result\s+found\s*[:\s]*(\d+)', text, re.IGNORECASE)
             if match:
                 info['total_items'] = int(match.group(1))
         
